@@ -22,4 +22,8 @@ impl Pixel {
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
+
+    pub fn to_bgr(&self) -> [u8; 3] {
+        [self.b, self.g, self.r]
+    }
 }
