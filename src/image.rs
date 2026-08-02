@@ -1,34 +1,25 @@
-use std::io::Read;
+use crate::{Resolution, utils::calculate_little_endian};
+use std::io::Error;
 
-use super::{Pixel, Resolution, utils::calculate_little_endian};
+use super::Pixel;
 
-#[derive(Debug)]
-pub struct Bmp {
-    pub file_size: u32,
-    pub resolution: Resolution,
+pub struct Image {
     pub pixels: Vec<Pixel>,
+    pub resolution: Resolution,
 }
 
-impl Bmp {
-    pub fn new(file_size: u32, resolution: Resolution, pixels: Vec<Pixel>) -> Self {
-        Self {
-            file_size,
-            resolution,
-            pixels,
-        }
+impl Image {
+    pub fn new(pixels: Vec<Pixel>, resolution: Resolution) -> Self {
+        Self { pixels, resolution }
     }
 
-    pub fn read_from_file(file_path: &str) -> Result<Self, std::io::Error> {
-        let file = std::fs::File::open(file_path)?;
-        let mut reader = std::io::BufReader::new(file);
-        let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer)?;
-
+    pub fn read_from_bmp(buffer: &[u8]) -> Result<Self, Error> {
         let file_size = calculate_little_endian(&buffer[2..6]);
         let pixel_offset = calculate_little_endian(&buffer[10..14]) as usize;
         let width = calculate_little_endian(&buffer[18..22]);
         let height = calculate_little_endian(&buffer[22..26]);
         let image_data_size = calculate_little_endian(&buffer[34..38]) as usize;
+        let bits_per_pixel = calculate_little_endian(&buffer[28..30]) as usize;
 
         let row_ideal_size = ((3 * width + 3) / 4) * 4;
         let row_padding = (row_ideal_size - 3 * width) as usize;
@@ -51,25 +42,33 @@ impl Bmp {
             "no_padding_pixel_bytes_length: {:?}",
             no_padding_pixel_bytes.len()
         );
-        for chunk in no_padding_pixel_bytes.chunks_exact(3) {
-            // pixels.push(Pixel::new(chunk[2], chunk[1], chunk[0]));
+        for chunk in no_padding_pixel_bytes.chunks_exact(bits_per_pixel / 8) {
+            let alpha = if bits_per_pixel == 32 {
+                Some(chunk[3])
+            } else {
+                None
+            };
+            pixels.push(Pixel::new(chunk[2], chunk[1], chunk[0], alpha));
         }
 
-        Ok(Self::new(
-            file_size as u32,
-            Resolution::new(width as usize, height as usize),
+        Ok(Self {
             pixels,
-        ))
+            resolution: Resolution {
+                width: width as usize,
+                height: height as usize,
+            },
+        })
     }
 
-    pub fn write_to_file(self, path: &str) -> Result<(), std::io::Error> {
+    pub fn write_to_bmp(&self, path: &str) -> Result<(), Error> {
+        let is_alpha = self.pixels.iter().any(|p| p.a.is_some());
         let mut file = Vec::new();
         // Magic numbers for bmp format
         file.push(0x42);
         file.push(0x4D);
-        // file size
-        for byte in (self.file_size as u32).to_le_bytes() {
-            file.push(byte);
+        // File Size, empty for now
+        for _ in 0..4 {
+            file.push(0);
         }
         // Unused bytes
         for _ in 0..4 {
@@ -98,17 +97,18 @@ impl Bmp {
         file.push(1);
         file.push(0);
         // Bits per pixel
-        file.push(24);
+        file.push(24 + is_alpha as u8 * 8);
         file.push(0);
         // compression
         for _ in 0..4 {
             file.push(0);
         }
         // image data size
+        let bytes_per_pixel = 3 + is_alpha as usize;
         let width = self.resolution.width;
-        let row_ideal_size = (width * 3 + 3) & !3;
-        let row_padding = row_ideal_size - 3 * width;
-        for byte in ((row_ideal_size * self.resolution.height) as u32).to_le_bytes() {
+        let row_ideal_size = (width * bytes_per_pixel + bytes_per_pixel) & !bytes_per_pixel;
+        let row_padding = row_ideal_size - bytes_per_pixel * width;
+        for byte in (row_ideal_size as u32 * self.resolution.height as u32).to_le_bytes() {
             file.push(byte);
         }
         // unused
@@ -121,11 +121,22 @@ impl Bmp {
         for row in self.pixels.chunks_exact(width as usize) {
             // 1. Write pixel bytes for this row
             for pixel in row {
-                file.extend_from_slice(&pixel.to_bgr());
+                if is_alpha {
+                    file.extend_from_slice(&pixel.to_bgra());
+                } else {
+                    file.extend_from_slice(&pixel.to_bgr());
+                }
             }
             // 2. Append padding at the end of the row
             file.extend(std::iter::repeat(0).take(row_padding as usize));
         }
+
+        // Update file size
+        let file_size = file.len() as u32;
+        for (index, byte) in file_size.to_le_bytes().iter().enumerate() {
+            file[2 + index] = byte.clone();
+        }
+
         // Write to file
         std::fs::write(path, file).map_err(|e| e)
     }
