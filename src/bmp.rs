@@ -34,7 +34,7 @@ impl Bmp {
         let row_padding = (row_ideal_size - 3 * width) as usize;
         println!("row_ideal_size: {row_ideal_size}, row_padding: {row_padding}");
 
-        let mut pixels = Vec::new();
+        let pixels = Vec::new();
         let mut no_padding_pixel_bytes = Vec::new();
 
         for (index, byte) in buffer[pixel_offset..(image_data_size + pixel_offset)]
@@ -51,7 +51,7 @@ impl Bmp {
             "no_padding_pixel_bytes_length: {:?}",
             no_padding_pixel_bytes.len()
         );
-        for chunk in no_padding_pixel_bytes.chunks_exact(3) {
+        for _chunk in no_padding_pixel_bytes.chunks_exact(3) {
             // pixels.push(Pixel::new(chunk[2], chunk[1], chunk[0]));
         }
 

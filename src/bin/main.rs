@@ -10,13 +10,21 @@ fn main() -> () {
     // for (index, chunk) in binary_data[..].chunks_exact(3).into_iter().enumerate() {
     //     println!("{index}: ({:?}, {:?}, {:?})", chunk[2], chunk[1], chunk[0]);
     // }
-    let buffer = std::fs::read("low.bmp").expect("Failed to read image file");
-    println!("Buffer: {:?}", &buffer[138..]);
-    let image = Image::read_from_bmp(&buffer).unwrap();
-    // for pixel in image.pixels.iter() {
-    //     println!("rgb({:?}, {:?}, {:?})", pixel.r, pixel.g, pixel.b);
-    // }
+    // let buffer = std::fs::read("low.bmp").expect("Failed to read image file");
+    // let image = Image::read_from_bmp(&buffer).unwrap();
+    // image.write_to_bmp("output5.bmp").unwrap();
+    // println!("Buffer: {:?}", &buffer[..]);
 
-    image.write_to_bmp("output5.bmp").unwrap();
+    let buffer = std::fs::read("low.bmp").expect("Failed to read image file");
+    println!("Buffer: {:?}", &buffer[54..]);
+    let image = Image::read_from_bmp(&buffer).unwrap();
+
+
+    for (index, pixel) in image.pixels.iter().enumerate() {
+        println!("index: {index}");
+        println!("rgb({:?}, {:?}, {:?})", pixel.r, pixel.g, pixel.b);
+    }
+
+
     return ();
 }

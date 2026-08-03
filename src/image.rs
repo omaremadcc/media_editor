@@ -14,25 +14,29 @@ impl Image {
     }
 
     pub fn read_from_bmp(buffer: &[u8]) -> Result<Self, Error> {
-        let file_size = calculate_little_endian(&buffer[2..6]);
         let pixel_offset = calculate_little_endian(&buffer[10..14]) as usize;
-        let width = calculate_little_endian(&buffer[18..22]);
+        let width = calculate_little_endian(&buffer[18..22]) as usize;
         let height = calculate_little_endian(&buffer[22..26]);
-        let image_data_size = calculate_little_endian(&buffer[34..38]) as usize;
         let bits_per_pixel = calculate_little_endian(&buffer[28..30]) as usize;
 
-        let row_ideal_size = ((3 * width + 3) / 4) * 4;
-        let row_padding = (row_ideal_size - 3 * width) as usize;
-        println!("row_ideal_size: {row_ideal_size}, row_padding: {row_padding}");
+        // Total row width in bytes (padded to a 4-byte / 32-bit boundary)
+        let row_padded_bytes = ((bits_per_pixel * width + 31) / 32) * 4;
+
+        // Unpadded row length in bytes (rounded up to nearest byte for sub-byte bpp)
+        let row_unpadded_bytes = (bits_per_pixel * width + 7) / 8;
+
+        // Padding required at the end of each row, in bytes
+        let row_padding = (row_padded_bytes - row_unpadded_bytes) as usize;
+        println!("row_padded_bytes: {row_padded_bytes}, row_unpadded_bytes: {row_unpadded_bytes}, row_padding: {row_padding}");
 
         let mut pixels = Vec::new();
         let mut no_padding_pixel_bytes = Vec::new();
 
-        for (index, byte) in buffer[pixel_offset..(image_data_size + pixel_offset)]
+        for (index, byte) in buffer[pixel_offset..]
             .into_iter()
             .enumerate()
         {
-            let mod_index = index % (row_ideal_size) as usize;
+            let mod_index = index % (row_padded_bytes) as usize;
             if (mod_index as usize) >= (width as usize * 3) {
                 continue;
             }
@@ -61,7 +65,6 @@ impl Image {
     }
 
     pub fn write_to_bmp(&self, path: &str) -> Result<(), Error> {
-        let is_alpha = self.pixels.iter().any(|p| p.a.is_some());
         let mut file = Vec::new();
         // Magic numbers for bmp format
         file.push(0x42);
@@ -74,9 +77,8 @@ impl Image {
         for _ in 0..4 {
             file.push(0);
         }
-        // Pixel Data offset
-        file.push(54);
-        for _ in 0..3 {
+        // Pixel Data offset placeholder
+        for _ in 0..4 {
             file.push(0);
         }
         // Header Size
@@ -97,14 +99,14 @@ impl Image {
         file.push(1);
         file.push(0);
         // Bits per pixel
-        file.push(24 + is_alpha as u8 * 8);
+        file.push(24 as u8);
         file.push(0);
         // compression
         for _ in 0..4 {
             file.push(0);
         }
         // image data size
-        let bytes_per_pixel = 3 + is_alpha as usize;
+        let bytes_per_pixel = 3 as usize;
         let width = self.resolution.width;
         let row_ideal_size = (width * bytes_per_pixel + bytes_per_pixel) & !bytes_per_pixel;
         let row_padding = row_ideal_size - bytes_per_pixel * width;
@@ -118,14 +120,15 @@ impl Image {
 
         println!("row_ideal_size: {row_ideal_size}, row_padding: {row_padding}");
 
+        // Adding pixel offset
+        for i in 0..4 {
+            file[10 + i] = (file.len() as u32).to_le_bytes()[i];
+        }
+
         for row in self.pixels.chunks_exact(width as usize) {
             // 1. Write pixel bytes for this row
             for pixel in row {
-                if is_alpha {
-                    file.extend_from_slice(&pixel.to_bgra());
-                } else {
-                    file.extend_from_slice(&pixel.to_bgr());
-                }
+                file.extend_from_slice(&pixel.to_bgr());
             }
             // 2. Append padding at the end of the row
             file.extend(std::iter::repeat(0).take(row_padding as usize));
