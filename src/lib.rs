@@ -46,6 +46,12 @@ impl Pixel {
         self.g = adjust_pixel_channel_exposure(self.g, factor);
         self.b = adjust_pixel_channel_exposure(self.b, factor);
     }
+
+    pub fn change_brightness(&mut self, factor: f32) {
+        self.r = adjust_pixel_channel_brightness(self.r, factor);
+        self.g = adjust_pixel_channel_brightness(self.g, factor);
+        self.b = adjust_pixel_channel_brightness(self.b, factor);
+    }
 }
 
 fn adjust_pixel_channel_exposure(channel: u8, factor: f32) -> u8 {
@@ -56,6 +62,17 @@ fn adjust_pixel_channel_exposure(channel: u8, factor: f32) -> u8 {
     linear *= base.powf(factor);
 
     let srgb = linear.powf(1.0 / 2.2) * 255.0;
+
+    if srgb == 0.0 {return 0};
+    if srgb == 255.0 {return 255};
+
+    return srgb as u8;
+}
+
+fn adjust_pixel_channel_brightness(channel: u8, factor: f32) -> u8 {
+    let linear = (channel as f32 / 255.0).powf(2.2);
+
+    let srgb = (linear + factor * (1.0 - (linear - 0.5).abs() * 2.0) ) * 255.0;
 
     if srgb == 0.0 {return 0};
     if srgb == 255.0 {return 255};

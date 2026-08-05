@@ -23,9 +23,9 @@ fn main() -> () {
     //     println!("rgb({:?}, {:?}, {:?})", pixel.r, pixel.g, pixel.b);
     // }
 
-    image.change_exposure(3f32);
+    image.change_brightness(2.0);
 
-    image.write_to_bmp("output7.bmp").unwrap();
+    image.write_to_bmp("output8.bmp").unwrap();
 
     return ();
 }

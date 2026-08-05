@@ -149,4 +149,9 @@ impl Image {
             pixel.change_exposure(factor);
         });
     }
+    pub fn change_brightness(&mut self, factor: f32) {
+        self.pixels.iter_mut().for_each(|pixel| {
+            pixel.change_brightness(factor);
+        });
+    }
 }
