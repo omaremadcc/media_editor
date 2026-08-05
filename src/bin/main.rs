@@ -23,8 +23,10 @@ fn main() -> () {
     //     println!("rgb({:?}, {:?}, {:?})", pixel.r, pixel.g, pixel.b);
     // }
 
-    image.change_brightness(2.0);
-
+    // for pixel in image.pixels.iter_mut() {
+    //     pixel.shift_hue(180.0);
+    // }
+    image.change_hue(-90.0);
     image.write_to_bmp("output8.bmp").unwrap();
 
     return ();

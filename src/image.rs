@@ -154,4 +154,9 @@ impl Image {
             pixel.change_brightness(factor);
         });
     }
+    pub fn change_hue(&mut self, factor: f32) {
+        self.pixels.iter_mut().for_each(|pixel| {
+            pixel.shift_hue(factor);
+        });
+    }
 }
