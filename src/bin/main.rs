@@ -1,4 +1,4 @@
-use images_editor::image::Image;
+use images_editor::{Pixel, image::Image};
 
 fn main() -> () {
     // let image = images_editor::bmp::Bmp::read_from_file("low_no_merge.bmp").unwrap();
@@ -15,16 +15,17 @@ fn main() -> () {
     // image.write_to_bmp("output5.bmp").unwrap();
     // println!("Buffer: {:?}", &buffer[..]);
 
-    let buffer = std::fs::read("low.bmp").expect("Failed to read image file");
-    println!("Buffer: {:?}", &buffer[54..]);
-    let image = Image::read_from_bmp(&buffer).unwrap();
+    let buffer = std::fs::read("image.bmp").expect("Failed to read image file");
+    let mut image = Image::read_from_bmp(&buffer).unwrap();
 
+    // for (index, pixel) in image.pixels.iter().enumerate() {
+    //     println!("index: {index}");
+    //     println!("rgb({:?}, {:?}, {:?})", pixel.r, pixel.g, pixel.b);
+    // }
 
-    for (index, pixel) in image.pixels.iter().enumerate() {
-        println!("index: {index}");
-        println!("rgb({:?}, {:?}, {:?})", pixel.r, pixel.g, pixel.b);
-    }
+    image.change_exposure(3f32);
 
+    image.write_to_bmp("output7.bmp").unwrap();
 
     return ();
 }

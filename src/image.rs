@@ -143,4 +143,10 @@ impl Image {
         // Write to file
         std::fs::write(path, file).map_err(|e| e)
     }
+
+    pub fn change_exposure(&mut self, factor: f32) {
+        self.pixels.iter_mut().for_each(|pixel| {
+            pixel.change_exposure(factor);
+        });
+    }
 }

@@ -32,4 +32,33 @@ impl Pixel {
     pub fn to_bgra(&self) -> [u8; 4] {
         [self.b, self.g, self.r, self.a.unwrap_or(0)]
     }
+
+    pub fn to_hex(&self) -> u32 {
+        ((self.b as u32) << 16) | ((self.g as u32) << 8) | (self.r as u32)
+    }
+
+    pub fn normalize(&self) -> f32 {
+        ((self.r as f32) / 255.0 + (self.g as f32) / 255.0 + (self.b as f32) / 255.0) / 3.0
+    }
+
+    pub fn change_exposure(&mut self, factor: f32) {
+        self.r = adjust_pixel_channel_exposure(self.r, factor);
+        self.g = adjust_pixel_channel_exposure(self.g, factor);
+        self.b = adjust_pixel_channel_exposure(self.b, factor);
+    }
+}
+
+fn adjust_pixel_channel_exposure(channel: u8, factor: f32) -> u8 {
+    let mut linear = (channel as f32 / 255.0).powf(2.2);
+
+    let base = 2.0f32;
+
+    linear *= base.powf(factor);
+
+    let srgb = linear.powf(1.0 / 2.2) * 255.0;
+
+    if srgb == 0.0 {return 0};
+    if srgb == 255.0 {return 255};
+
+    return srgb as u8;
 }
