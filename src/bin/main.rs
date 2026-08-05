@@ -23,10 +23,7 @@ fn main() -> () {
     //     println!("rgb({:?}, {:?}, {:?})", pixel.r, pixel.g, pixel.b);
     // }
 
-    for pixel in image.pixels.iter_mut() {
-        pixel.change_saturation(400.0);
-    }
-    image.write_to_bmp("output8.bmp").unwrap();
+    image.write_to_bmp("output9.bmp").unwrap();
 
     return ();
 }

@@ -165,4 +165,39 @@ impl Image {
             pixel.change_saturation(factor);
         });
     }
+
+
+    pub fn rotate_image_to_right(&mut self) {
+        let height = self.resolution.height;
+        let width = self.resolution.width;
+        let mut new_pixels = Vec::new();
+
+        for col in 0..width {
+            let col = width - col - 1;
+            for row in 0..height {
+                let pixel = self.pixels[row * width + col];
+                new_pixels.push(pixel);
+            }
+        }
+        self.resolution.width = height;
+        self.resolution.height = width;
+        self.pixels = new_pixels;
+    }
+
+    pub fn rotate_image_to_left(&mut self) {
+        let height = self.resolution.height;
+        let width = self.resolution.width;
+        let mut new_pixels = Vec::new();
+
+        for col in 0..width {
+            for row in 0..height {
+                let row = height - row - 1;
+                let pixel = self.pixels[row * width + col];
+                new_pixels.push(pixel);
+            }
+        }
+        self.resolution.width = height;
+        self.resolution.height = width;
+        self.pixels = new_pixels;
+    }
 }
