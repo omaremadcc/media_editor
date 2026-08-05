@@ -159,4 +159,10 @@ impl Image {
             pixel.shift_hue(factor);
         });
     }
+
+    pub fn change_saturation(&mut self, factor: f32) {
+        self.pixels.iter_mut().for_each(|pixel| {
+            pixel.change_saturation(factor);
+        });
+    }
 }

@@ -99,6 +99,17 @@ impl Pixel {
         self.g = g;
         self.b = b;
     }
+
+    pub fn change_saturation(&mut self, degree: f32) {
+        let (h, s, v) = self.to_hsv();
+
+        let new_s = (s * (degree / 100.0)).clamp(0.0, 1.0);
+
+        let (r, g, b) = hsv_to_rgb(h, new_s, v);
+        self.r = r;
+        self.g = g;
+        self.b = b;
+    }
 }
 
 fn adjust_pixel_channel_exposure(channel: u8, factor: f32) -> u8 {
