@@ -200,4 +200,31 @@ impl Image {
         self.resolution.height = width;
         self.pixels = new_pixels;
     }
+
+    pub fn mirror_image_vertically(&mut self) {
+        let mut new_pixels = Vec::new();
+
+        for row in 0..self.resolution.height {
+            let row = self.resolution.height - row - 1;
+            for col in 0..self.resolution.width {
+                let pixel = self.pixels[row * self.resolution.width + col];
+                new_pixels.push(pixel);
+            }
+        }
+        self.pixels = new_pixels;
+    }
+
+    pub fn mirror_image_horizontally(&mut self) {
+        let mut new_pixels = Vec::new();
+
+        for row in 0..self.resolution.height {
+            for col in 0..self.resolution.width {
+                let col = self.resolution.width - col - 1;
+                let pixel = self.pixels[row * self.resolution.width + col];
+                new_pixels.push(pixel);
+            }
+        }
+        self.pixels = new_pixels;
+    }
+
 }

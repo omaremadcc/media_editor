@@ -22,6 +22,7 @@ fn main() -> () {
     //     println!("index: {index}");
     //     println!("rgb({:?}, {:?}, {:?})", pixel.r, pixel.g, pixel.b);
     // }
+    image.mirror_image_horizontally();
 
     image.write_to_bmp("output9.bmp").unwrap();
 
