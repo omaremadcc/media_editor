@@ -1,4 +1,4 @@
-use images_editor::{Pixel, image::Image};
+use images_editor::{Resolution, canvas, image::Image};
 
 fn main() -> () {
     // let image = images_editor::bmp::Bmp::read_from_file("low_no_merge.bmp").unwrap();
@@ -17,14 +17,21 @@ fn main() -> () {
 
     let buffer = std::fs::read("image.bmp").expect("Failed to read image file");
     let mut image = Image::read_from_bmp(&buffer).unwrap();
+    let buffer_2 = std::fs::read("low_no_merge.bmp").expect("Failed to read image file");
+    let mut image_2 = Image::read_from_bmp(&buffer_2).unwrap();
 
-    // for (index, pixel) in image.pixels.iter().enumerate() {
-    //     println!("index: {index}");
-    //     println!("rgb({:?}, {:?}, {:?})", pixel.r, pixel.g, pixel.b);
-    // }
-    image.mirror_image_horizontally();
+    let mut canvas = canvas::Canvas::new(Resolution::new(0, 0));
+    let index_of_layer = canvas.add_image(image, None);
+    let index_of_layer_2 = canvas.add_image(image_2, None);
 
-    image.write_to_bmp("output9.bmp").unwrap();
+    // let layer = canvas.layers.get_mut(index_of_layer).unwrap();
+    let layer_2 = canvas.get_mut_layer(index_of_layer_2);
+    layer_2.position.x = 30;
+    let layer_1 = canvas.get_mut_layer(index_of_layer);
+    layer_1.image.mirror_image_vertically();
+
+    let final_image = canvas.to_image();
+    final_image.write_to_bmp("output10.bmp").unwrap();
 
     return ();
 }

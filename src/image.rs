@@ -23,11 +23,10 @@ impl Image {
         let row_padded_bytes = ((bits_per_pixel * width + 31) / 32) * 4;
 
         // Unpadded row length in bytes (rounded up to nearest byte for sub-byte bpp)
-        let row_unpadded_bytes = (bits_per_pixel * width + 7) / 8;
+        // let row_unpadded_bytes = (bits_per_pixel * width + 7) / 8;
 
         // Padding required at the end of each row, in bytes
-        let row_padding = (row_padded_bytes - row_unpadded_bytes) as usize;
-        println!("row_padded_bytes: {row_padded_bytes}, row_unpadded_bytes: {row_unpadded_bytes}, row_padding: {row_padding}");
+        // let row_padding = (row_padded_bytes - row_unpadded_bytes) as usize;
 
         let mut pixels = Vec::new();
         let mut no_padding_pixel_bytes = Vec::new();
@@ -42,10 +41,6 @@ impl Image {
             }
             no_padding_pixel_bytes.push(byte.clone());
         }
-        println!(
-            "no_padding_pixel_bytes_length: {:?}",
-            no_padding_pixel_bytes.len()
-        );
         for chunk in no_padding_pixel_bytes.chunks_exact(bits_per_pixel / 8) {
             let alpha = if bits_per_pixel == 32 {
                 Some(chunk[3])

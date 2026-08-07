@@ -1,8 +1,9 @@
 pub mod bmp;
 pub mod image;
 pub mod utils;
+pub mod canvas;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Resolution {
     pub width: usize,
     pub height: usize,
@@ -167,4 +168,9 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (u8, u8, u8) {
     let b = ((res.2 + m) * 255.0).round().clamp(0.0, 255.0) as u8;
 
     return (r, g, b);
+}
+
+pub struct Point {
+    pub x: u32,
+    pub y: u32,
 }

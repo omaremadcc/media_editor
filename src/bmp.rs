@@ -47,10 +47,7 @@ impl Bmp {
             }
             no_padding_pixel_bytes.push(byte.clone());
         }
-        println!(
-            "no_padding_pixel_bytes_length: {:?}",
-            no_padding_pixel_bytes.len()
-        );
+
         for _chunk in no_padding_pixel_bytes.chunks_exact(3) {
             // pixels.push(Pixel::new(chunk[2], chunk[1], chunk[0]));
         }
