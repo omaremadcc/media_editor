@@ -16,7 +16,7 @@ impl Canvas {
     fn add_layer(&mut self, layer: Layer) {
         self.layers.push(layer);
     }
-    pub fn add_image(&mut self, image: Image, position: Option<crate::Point>) -> usize {
+    pub fn add_image(&mut self, image: Image, position: Option<LayerPosition>) -> usize {
         if self.resolution.width < image.resolution.width {
             self.resolution.width = image.resolution.width;
         }
@@ -26,7 +26,7 @@ impl Canvas {
         if let Some(position) = position {
             self.add_layer(Layer { image, position });
         } else {
-            self.add_layer(Layer { image, position: crate::Point { x: 0, y: 0 } });
+            self.add_layer(Layer { image, position: LayerPosition::Default });
         };
         return self.layers.len() - 1;
     }
@@ -42,9 +42,14 @@ impl Canvas {
         let mut image = Image::new(empty_pixels, self.resolution.clone());
 
         for layer in &self.layers {
-            let base_index = layer.position.y * self.resolution.width as u32 + layer.position.x;
+            let base_index;
+            match layer.position {
+                LayerPosition::Default => base_index = 0,
+                LayerPosition::Point(x, y) => base_index = y * self.resolution.width as u32 + x,
+                LayerPosition::Percent(x, y) => base_index = (y * self.resolution.height as f32) as u32 * self.resolution.width as u32 + (x as f32 * self.resolution.width as f32) as u32,
+                LayerPosition::Center => base_index = ((self.resolution.height as f32 / 2.0) - (layer.image.resolution.height as f32 / 2.0)) as u32 * self.resolution.width as u32 + ((self.resolution.width as f32 / 2.0) - (layer.image.resolution.width as f32 / 2.0)) as u32,
+            }
             for row in 0..layer.image.resolution.height {
-                // let row = layer.image.resolution.width - row - 1;
                 for col in 0..layer.image.resolution.width {
                     let col = layer.image.resolution.width - col - 1;
                     let index = (row * layer.image.resolution.width + col) as usize;
@@ -61,5 +66,51 @@ impl Canvas {
 
 pub struct Layer {
     pub image: Image,
-    pub position: crate::Point,
+    pub position: LayerPosition,
+}
+
+impl Layer {
+    pub fn center_layer(&mut self) {
+        self.position = LayerPosition::Center;
+    }
+    pub fn move_x_percentage(&mut self, percentage: f32) {
+        if let LayerPosition::Percent(x, y) = self.position {
+            self.position = LayerPosition::Percent(x + percentage, y);
+        } else {
+            self.position = LayerPosition::Percent(percentage, 0.0);
+        }
+    }
+    pub fn move_y_percentage(&mut self, percentage: f32) {
+        if let LayerPosition::Percent(x, y) = self.position {
+            self.position = LayerPosition::Percent(x, y + percentage);
+        } else {
+            self.position = LayerPosition::Percent(0.0, percentage);
+        }
+    }
+    pub fn move_to_point(&mut self, x: u32, y: u32) {
+        self.position = LayerPosition::Point(x, y);
+    }
+    pub fn move_x(&mut self, pixels: u32) {
+        if let LayerPosition::Point(x, y) = self.position {
+            self.position = LayerPosition::Point(x + pixels, y);
+        } else {
+            self.position = LayerPosition::Point(pixels, 0);
+        }
+    }
+    pub fn move_y(&mut self, pixels: u32) {
+        if let LayerPosition::Point(x, y) = self.position {
+            self.position = LayerPosition::Point(x, y + pixels);
+        } else {
+            self.position = LayerPosition::Point(0, pixels);
+        }
+    }
+
+}
+
+
+pub enum LayerPosition {
+    Default,
+    Point(u32, u32),
+    Percent(f32, f32),
+    Center
 }

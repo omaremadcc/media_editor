@@ -26,7 +26,8 @@ fn main() -> () {
 
     // let layer = canvas.layers.get_mut(index_of_layer).unwrap();
     let layer_2 = canvas.get_mut_layer(index_of_layer_2);
-    layer_2.position.x = 30;
+    layer_2.move_x_percentage(0.3);
+
     let layer_1 = canvas.get_mut_layer(index_of_layer);
     layer_1.image.mirror_image_vertically();
 
