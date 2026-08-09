@@ -1,3 +1,4 @@
+use crate::utils::scaled_pixel_color;
 use crate::{Pixel, Resolution};
 use crate::image::Image;
 
@@ -24,9 +25,9 @@ impl Canvas {
             self.resolution.height = image.resolution.height;
         }
         if let Some(position) = position {
-            self.add_layer(Layer { image, position });
+            self.add_layer(Layer { image, position, scale: 1.0 });
         } else {
-            self.add_layer(Layer { image, position: LayerPosition::Default });
+            self.add_layer(Layer { image, position: LayerPosition::Default, scale: 1.0 });
         };
         return self.layers.len() - 1;
     }
@@ -43,19 +44,37 @@ impl Canvas {
 
         for layer in &self.layers {
             let base_index;
+            let mut pixels = &layer.image.pixels;
+            let target_width = (layer.image.resolution.width as f32 * layer.scale) as usize;
+            let target_height = (layer.image.resolution.height as f32 * layer.scale) as usize;
+            let mut scaled_pixels = vec![Pixel::new(255, 255, 255, None); target_width * target_height];
+
+            if layer.scale != 1.0 {
+
+                for row in 0..target_height {
+                    for col in 0..target_width {
+                        let (src_x, src_y) = scaled_pixel_color(col as u32, row as u32, 1.0 / layer.scale);
+                        scaled_pixels[row * target_width + col] = layer.image.pixels[src_y as usize * layer.image.resolution.width + src_x as usize];
+                    }
+                }
+                pixels = &scaled_pixels;
+            }
             match layer.position {
                 LayerPosition::Default => base_index = 0,
                 LayerPosition::Point(x, y) => base_index = y * self.resolution.width as u32 + x,
                 LayerPosition::Percent(x, y) => base_index = (y * self.resolution.height as f32) as u32 * self.resolution.width as u32 + (x as f32 * self.resolution.width as f32) as u32,
-                LayerPosition::Center => base_index = ((self.resolution.height as f32 / 2.0) - (layer.image.resolution.height as f32 / 2.0)) as u32 * self.resolution.width as u32 + ((self.resolution.width as f32 / 2.0) - (layer.image.resolution.width as f32 / 2.0)) as u32,
+                LayerPosition::Center => base_index = ((self.resolution.height as f32 / 2.0) - (target_height as f32 / 2.0)) as u32 * self.resolution.width as u32 + ((self.resolution.width as f32 / 2.0) - (target_width as f32 / 2.0)) as u32,
             }
-            for row in 0..layer.image.resolution.height {
-                for col in 0..layer.image.resolution.width {
-                    let col = layer.image.resolution.width - col - 1;
-                    let index = (row * layer.image.resolution.width + col) as usize;
-                    let pixel = layer.image.pixels[index];
+            for row in 0..target_height {
+                for col in 0..target_width {
+                    let col = target_width - col - 1;
+                    let index = (row * target_width + col) as usize;
+                    let pixel = pixels[index];
                     let index = (row * image.resolution.width + col) as usize;
-                    image.pixels[base_index as usize + index] = pixel;
+                    let index_final = base_index as usize + index;
+                    if index_final < image.pixels.len() {
+                        image.pixels[index_final] = pixel;
+                    }
                 }
             }
         }
@@ -67,6 +86,7 @@ impl Canvas {
 pub struct Layer {
     pub image: Image,
     pub position: LayerPosition,
+    pub scale: f32,
 }
 
 impl Layer {
@@ -104,7 +124,9 @@ impl Layer {
             self.position = LayerPosition::Point(0, pixels);
         }
     }
-
+    pub fn scale_layer(&mut self, scale: f32) {
+        self.scale = scale;
+    }
 }
 
 
