@@ -1,7 +1,7 @@
 pub mod bmp;
+pub mod canvas;
 pub mod image;
 pub mod utils;
-pub mod canvas;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Resolution {
@@ -122,8 +122,12 @@ fn adjust_pixel_channel_exposure(channel: u8, factor: f32) -> u8 {
 
     let srgb = linear.powf(1.0 / 2.2) * 255.0;
 
-    if srgb == 0.0 {return 0};
-    if srgb == 255.0 {return 255};
+    if srgb == 0.0 {
+        return 0;
+    };
+    if srgb == 255.0 {
+        return 255;
+    };
 
     return srgb as u8;
 }
@@ -131,10 +135,14 @@ fn adjust_pixel_channel_exposure(channel: u8, factor: f32) -> u8 {
 fn adjust_pixel_channel_brightness(channel: u8, factor: f32) -> u8 {
     let linear = (channel as f32 / 255.0).powf(2.2);
 
-    let srgb = (linear + factor * (1.0 - (linear - 0.5).abs() * 2.0) ) * 255.0;
+    let srgb = (linear + factor * (1.0 - (linear - 0.5).abs() * 2.0)) * 255.0;
 
-    if srgb == 0.0 {return 0};
-    if srgb == 255.0 {return 255};
+    if srgb == 0.0 {
+        return 0;
+    };
+    if srgb == 255.0 {
+        return 255;
+    };
 
     return srgb as u8;
 }
@@ -154,7 +162,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (u8, u8, u8) {
     } else if 2.0 <= h_degree && h_degree < 3.0 {
         res = (0.0, chroma, x);
     } else if 3.0 <= h_degree && h_degree < 4.0 {
-        res = (0.0, x ,chroma);
+        res = (0.0, x, chroma);
     } else if 4.0 <= h_degree && h_degree < 5.0 {
         res = (x, 0.0, chroma);
     } else if 5.0 <= h_degree && h_degree < 6.0 {

@@ -16,17 +16,21 @@ fn main() -> () {
     // println!("Buffer: {:?}", &buffer[..]);
 
     let buffer = std::fs::read("image.bmp").expect("Failed to read image file");
-    let mut image = Image::read_from_bmp(&buffer).unwrap();
+    let image = Image::read_from_bmp(&buffer).unwrap();
     let buffer_2 = std::fs::read("low_no_merge.bmp").expect("Failed to read image file");
-    let mut image_2 = Image::read_from_bmp(&buffer_2).unwrap();
+    let image_2 = Image::read_from_bmp(&buffer_2).unwrap();
 
     let mut canvas = canvas::Canvas::new(Resolution::new(0, 0));
     let index_of_layer = canvas.add_image(image, None);
     let index_of_layer_2 = canvas.add_image(image_2, None);
 
-    // let layer = canvas.layers.get_mut(index_of_layer).unwrap();
+
+
+    let layer = canvas.layers.get_mut(index_of_layer).unwrap();
+    layer.scale_layer(0.5);
     let layer_2 = canvas.get_mut_layer(index_of_layer_2);
-    layer_2.move_x_percentage(0.3);
+    // layer_2.scale = 20.0;
+    layer_2.center_layer();
 
     let layer_1 = canvas.get_mut_layer(index_of_layer);
     layer_1.image.mirror_image_vertically();
