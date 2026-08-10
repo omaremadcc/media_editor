@@ -5,6 +5,7 @@ use crate::image::Image;
 pub struct Canvas {
     pub layers: Vec<Layer>,
     pub resolution: Resolution,
+    current_layer_id: usize,
 }
 
 impl Canvas {
@@ -12,10 +13,12 @@ impl Canvas {
         Self {
             layers: Vec::new(),
             resolution,
+            current_layer_id: 0,
         }
     }
     fn add_layer(&mut self, layer: Layer) {
         self.layers.push(layer);
+        self.current_layer_id += 1;
     }
     pub fn add_image(&mut self, image: Image, position: Option<LayerPosition>) -> usize {
         if self.resolution.width < image.resolution.width {
@@ -25,15 +28,15 @@ impl Canvas {
             self.resolution.height = image.resolution.height;
         }
         if let Some(position) = position {
-            self.add_layer(Layer { image, position, scale: 1.0 });
+            self.add_layer(Layer { image, position, scale: 1.0, id: self.current_layer_id });
         } else {
-            self.add_layer(Layer { image, position: LayerPosition::Default, scale: 1.0 });
+            self.add_layer(Layer { image, position: LayerPosition::Default, scale: 1.0, id: self.current_layer_id });
         };
         return self.layers.len() - 1;
     }
 
-    pub fn get_mut_layer(&mut self, index: usize) -> &mut Layer {
-        &mut self.layers[index]
+    pub fn get_mut_layer(&mut self, id: usize) -> &mut Layer {
+        self.layers.iter_mut().find(|layer| layer.id == id).unwrap()
     }
 
 
@@ -81,9 +84,35 @@ impl Canvas {
 
         image
     }
+
+    pub fn bring_layer_to_front(&mut self, layer_id: usize) {
+        if let Some(index) = self.layers.iter().position(|layer| layer.id == layer_id) {
+            let layer = self.layers.remove(index);
+            self.layers.push(layer);
+        }
+    }
+    pub fn bring_layer_forward(&mut self, layer_id: usize) {
+        if let Some(index) = self.layers.iter().position(|layer| layer.id == layer_id) {
+            let layer = self.layers.remove(index);
+            self.layers.insert(index + 1, layer);
+        }
+    }
+    pub fn send_layer_backward(&mut self, layer_id: usize) {
+        if let Some(index) = self.layers.iter().position(|layer| layer.id == layer_id) {
+            let layer = self.layers.remove(index);
+            self.layers.insert(index - 1, layer);
+        }
+    }
+    pub fn send_layer_to_back(&mut self, layer_id: usize) {
+        if let Some(index) = self.layers.iter().position(|layer| layer.id == layer_id) {
+            let layer = self.layers.remove(index);
+            self.layers.insert(0, layer);
+        }
+    }
 }
 
 pub struct Layer {
+    pub id: usize,
     pub image: Image,
     pub position: LayerPosition,
     pub scale: f32,

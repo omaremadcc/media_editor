@@ -17,23 +17,30 @@ fn main() -> () {
 
     let buffer = std::fs::read("image.bmp").expect("Failed to read image file");
     let image = Image::read_from_bmp(&buffer).unwrap();
+    let image2 = Image::read_from_bmp(&buffer).unwrap();
+    let image3 = Image::read_from_bmp(&buffer).unwrap();
+    let image4 = Image::read_from_bmp(&buffer).unwrap();
+    let image5 = Image::read_from_bmp(&buffer).unwrap();
     let buffer_2 = std::fs::read("low_no_merge.bmp").expect("Failed to read image file");
     let image_2 = Image::read_from_bmp(&buffer_2).unwrap();
 
     let mut canvas = canvas::Canvas::new(Resolution::new(0, 0));
-    let index_of_layer = canvas.add_image(image, None);
-    let index_of_layer_2 = canvas.add_image(image_2, None);
+    let id_of_layer = canvas.add_image(image, None);
+    let id_of_layer_2 = canvas.add_image(image2, None);
+    let id_of_layer_3 = canvas.add_image(image3, None);
+    let id_of_layer_4 = canvas.add_image(image4, None);
+    let id_of_layer_5 = canvas.add_image(image5, None);
 
+    let mut layer_1 = canvas.get_mut_layer(id_of_layer);
+    let mut layer_2 = canvas.get_mut_layer(id_of_layer_2);
+    layer_2.image.change_exposure(200.0);
+    let mut layer_3 = canvas.get_mut_layer(id_of_layer_3);
+    let mut layer_4 = canvas.get_mut_layer(id_of_layer_4);
+    layer_4.image.change_hue(90.0);
+    canvas.bring_layer_forward(id_of_layer_4);
+    let mut layer_5 = canvas.get_mut_layer(id_of_layer_5);
+    layer_5.image.change_exposure(2.0);
 
-
-    let layer = canvas.layers.get_mut(index_of_layer).unwrap();
-    layer.scale_layer(0.5);
-    let layer_2 = canvas.get_mut_layer(index_of_layer_2);
-    // layer_2.scale = 20.0;
-    layer_2.center_layer();
-
-    let layer_1 = canvas.get_mut_layer(index_of_layer);
-    layer_1.image.mirror_image_vertically();
 
     let final_image = canvas.to_image();
     final_image.write_to_bmp("output10.bmp").unwrap();
