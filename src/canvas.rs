@@ -1,6 +1,7 @@
+use crate::graphic::{Graphic, GraphicType};
+use crate::image::Image;
 use crate::utils::scaled_pixel_color;
 use crate::{Pixel, Resolution};
-use crate::image::Image;
 
 pub struct Canvas {
     pub layers: Vec<Layer>,
@@ -28,9 +29,19 @@ impl Canvas {
             self.resolution.height = image.resolution.height;
         }
         if let Some(position) = position {
-            self.add_layer(Layer { image, position, scale: 1.0, id: self.current_layer_id });
+            self.add_layer(Layer {
+                element: Element::Image(image),
+                position,
+                scale: 1.0,
+                id: self.current_layer_id,
+            });
         } else {
-            self.add_layer(Layer { image, position: LayerPosition::Default, scale: 1.0, id: self.current_layer_id });
+            self.add_layer(Layer {
+                element: Element::Image(image),
+                position: LayerPosition::Default,
+                scale: 1.0,
+                id: self.current_layer_id,
+            });
         };
         return self.layers.len() - 1;
     }
@@ -39,50 +50,153 @@ impl Canvas {
         self.layers.iter_mut().find(|layer| layer.id == id).unwrap()
     }
 
-
     pub fn to_image(&self) -> Image {
         let num_pixels = self.resolution.width as usize * self.resolution.height as usize;
         let empty_pixels = vec![Pixel::new(255, 255, 255, None); num_pixels];
-        let mut image = Image::new(empty_pixels, self.resolution.clone());
+        let mut final_image = Image::new(empty_pixels, self.resolution.clone());
+
+        let mut plot_pixel = |x: usize, y: usize, pixel: Pixel, base_index: Option<usize>| {
+            if let Some(index) = base_index {
+                final_image.pixels[index + y * self.resolution.width as usize + x] = pixel;
+            } else {
+                final_image.pixels[y * self.resolution.width as usize + x] = pixel;
+            }
+        };
 
         for layer in &self.layers {
-            let base_index;
-            let mut pixels = &layer.image.pixels;
-            let target_width = (layer.image.resolution.width as f32 * layer.scale) as usize;
-            let target_height = (layer.image.resolution.height as f32 * layer.scale) as usize;
-            let mut scaled_pixels = vec![Pixel::new(255, 255, 255, None); target_width * target_height];
+            match &layer.element {
+                Element::Image(image) => {
+                    let base_index;
+                    let image = &image;
+                    let mut pixels = &image.pixels;
+                    let target_width = (image.resolution.width as f32 * layer.scale) as usize;
+                    let target_height = (image.resolution.height as f32 * layer.scale) as usize;
+                    let mut scaled_pixels =
+                        vec![Pixel::new(255, 255, 255, None); target_width * target_height];
 
-            if layer.scale != 1.0 {
-
-                for row in 0..target_height {
-                    for col in 0..target_width {
-                        let (src_x, src_y) = scaled_pixel_color(col as u32, row as u32, 1.0 / layer.scale);
-                        scaled_pixels[row * target_width + col] = layer.image.pixels[src_y as usize * layer.image.resolution.width + src_x as usize];
+                    if layer.scale != 1.0 {
+                        for row in 0..target_height {
+                            for col in 0..target_width {
+                                let (src_x, src_y) =
+                                    scaled_pixel_color(col as u32, row as u32, 1.0 / layer.scale);
+                                scaled_pixels[row * target_width + col] = image.pixels
+                                    [src_y as usize * image.resolution.width + src_x as usize];
+                            }
+                        }
+                        pixels = &scaled_pixels;
+                    }
+                    match layer.position {
+                        LayerPosition::Default => base_index = 0,
+                        LayerPosition::Point(x, y) => {
+                            base_index = y * self.resolution.width as u32 + x
+                        }
+                        LayerPosition::Percent(x, y) => {
+                            base_index = (y * self.resolution.height as f32) as u32
+                                * self.resolution.width as u32
+                                + (x as f32 * self.resolution.width as f32) as u32
+                        }
+                        LayerPosition::Center => {
+                            base_index = ((self.resolution.height as f32 / 2.0)
+                                - (target_height as f32 / 2.0))
+                                as u32
+                                * self.resolution.width as u32
+                                + ((self.resolution.width as f32 / 2.0)
+                                    - (target_width as f32 / 2.0))
+                                    as u32
+                        }
+                    }
+                    for row in 0..target_height {
+                        for col in 0..target_width {
+                            let col = target_width - col - 1;
+                            let index = (row * target_width + col) as usize;
+                            let pixel = pixels[index];
+                            plot_pixel(col, row, pixel, Some(base_index as usize));
+                        }
                     }
                 }
-                pixels = &scaled_pixels;
-            }
-            match layer.position {
-                LayerPosition::Default => base_index = 0,
-                LayerPosition::Point(x, y) => base_index = y * self.resolution.width as u32 + x,
-                LayerPosition::Percent(x, y) => base_index = (y * self.resolution.height as f32) as u32 * self.resolution.width as u32 + (x as f32 * self.resolution.width as f32) as u32,
-                LayerPosition::Center => base_index = ((self.resolution.height as f32 / 2.0) - (target_height as f32 / 2.0)) as u32 * self.resolution.width as u32 + ((self.resolution.width as f32 / 2.0) - (target_width as f32 / 2.0)) as u32,
-            }
-            for row in 0..target_height {
-                for col in 0..target_width {
-                    let col = target_width - col - 1;
-                    let index = (row * target_width + col) as usize;
-                    let pixel = pixels[index];
-                    let index = (row * image.resolution.width + col) as usize;
-                    let index_final = base_index as usize + index;
-                    if index_final < image.pixels.len() {
-                        image.pixels[index_final] = pixel;
+                Element::Graphic(graphic) => match graphic.graphic_type {
+                    // Basic Bresenham Algorithm
+                    GraphicType::Line { start, end } => {
+                        let ((x0, y0), (x1, y1)) = if start.0 > end.0 {
+                            (end, start)
+                        } else {
+                            (start, end)
+                        };
+
+                        let dy: isize = y1 as isize - y0 as isize;
+                        let dx: isize = x1 as isize - x0 as isize;
+
+                        let width = graphic.stroke_width;
+
+                        if dx != 0 {
+                            let slope = dy / dx;
+                            let mut y = y0;
+                            for i in 0..(dx + 1) {
+                                if width > 1 {
+                                    for j in 0..width {
+                                        if dy > dx {
+                                            plot_pixel(
+                                                x0 + i as usize + j,
+                                                y,
+                                                Pixel::new(0, 0, 0, None),
+                                                None,
+                                            );
+                                        } else {
+                                            plot_pixel(
+                                                x0 + i as usize,
+                                                y + j,
+                                                Pixel::new(0, 0, 0, None),
+                                                None,
+                                            );
+                                        }
+                                    }
+                                } else {
+                                    plot_pixel(
+                                        // This will work because dx is always positive (we reorder the points so x0 < x1)
+                                        dbg!(x0 + i as usize),
+                                        dbg!(y),
+                                        Pixel::new(0, 0, 0, None),
+                                        None,
+                                    );
+                                }
+
+                                let py = slope * (i + 1) + y0 as isize;
+                                let d0 = py - y as isize;
+                                let d1 = (y as isize + 1) - py;
+                                if (d0 - d1 <= 0 && slope < 0) || (d0 >= d1 && slope > 0) {
+                                    if slope > 0 {
+                                        y += 1;
+                                        // dbg!(y);
+                                    } else {
+                                        y -= 1;
+                                        // dbg!(y);
+                                    }
+                                }
+                            }
+                        };
                     }
-                }
+                },
             }
         }
 
-        image
+        final_image
+    }
+
+    pub fn add_line(&mut self, x0: usize, y0: usize, x1: usize, y1: usize, width: usize) {
+        self.add_layer(Layer {
+            id: self.current_layer_id,
+            position: LayerPosition::Center,
+            scale: 1.0,
+            element: Element::Graphic(Graphic {
+                graphic_type: GraphicType::Line {
+                    start: (x0, y0),
+                    end: (x1, y1),
+                },
+                stroke_width: width,
+                stroke_color: 0,
+                fill_color: 0,
+            }),
+        });
     }
 
     pub fn bring_layer_to_front(&mut self, layer_id: usize) {
@@ -113,7 +227,7 @@ impl Canvas {
 
 pub struct Layer {
     pub id: usize,
-    pub image: Image,
+    pub element: Element,
     pub position: LayerPosition,
     pub scale: f32,
 }
@@ -158,10 +272,20 @@ impl Layer {
     }
 }
 
-
 pub enum LayerPosition {
     Default,
     Point(u32, u32),
     Percent(f32, f32),
-    Center
+    Center,
+}
+
+pub enum Element {
+    Image(Image),
+    Graphic(Graphic),
+}
+
+impl Element {
+    pub fn is_image(&self) -> bool {
+        matches!(self, Element::Image(_))
+    }
 }
