@@ -3,6 +3,7 @@ use std::io::Error;
 
 use super::Pixel;
 
+#[derive(Debug)]
 pub struct Image {
     pub pixels: Vec<Pixel>,
     pub resolution: Resolution,
@@ -31,10 +32,7 @@ impl Image {
         let mut pixels = Vec::new();
         let mut no_padding_pixel_bytes = Vec::new();
 
-        for (index, byte) in buffer[pixel_offset..]
-            .into_iter()
-            .enumerate()
-        {
+        for (index, byte) in buffer[pixel_offset..].into_iter().enumerate() {
             let mod_index = index % (row_padded_bytes) as usize;
             if (mod_index as usize) >= (width as usize * 3) {
                 continue;
@@ -161,7 +159,6 @@ impl Image {
         });
     }
 
-
     pub fn rotate_image_to_right(&mut self) {
         let height = self.resolution.height;
         let width = self.resolution.width;
@@ -221,5 +218,4 @@ impl Image {
         }
         self.pixels = new_pixels;
     }
-
 }

@@ -70,6 +70,7 @@ impl Canvas {
         };
 
         for layer in &self.layers {
+            dbg!(layer.id);
             match &layer.element {
                 Element::Image(image) => {
                     let base_index;
@@ -181,6 +182,50 @@ impl Canvas {
                             }
                         };
                     }
+                    GraphicType::Rectangle {
+                        width,
+                        height,
+                        start,
+                    } => {
+                        let stroke_width = graphic.stroke_width;
+                        let stroke_color = graphic.stroke_color;
+
+                        let fill_color = graphic.fill_color;
+                        let (x, y) = start;
+                        for i in 0..width {
+                            for j in 0..stroke_width {
+                                plot_pixel(x + i, y - j, Pixel::from_hex(stroke_color), None);
+                                plot_pixel(
+                                    x + i,
+                                    y + height + j,
+                                    Pixel::from_hex(stroke_color),
+                                    None,
+                                );
+                            }
+                        }
+                        // Added the stroke width to the height to fill the corners
+                        for i in 0..(height + (2 * stroke_width) - 1) {
+                            for j in 0..(stroke_width) {
+                                plot_pixel(
+                                    x - j,
+                                    y + i - stroke_width + 1,
+                                    Pixel::from_hex(stroke_color),
+                                    None,
+                                );
+                                plot_pixel(
+                                    x + width + j,
+                                    y + i - stroke_width + 1,
+                                    Pixel::from_hex(stroke_color),
+                                    None,
+                                );
+                            }
+                        }
+                        for i in 1..width {
+                            for j in 1..height {
+                                plot_pixel(x + i, y + j, Pixel::from_hex(fill_color), None);
+                            }
+                        }
+                    }
                 },
             }
         }
@@ -188,7 +233,7 @@ impl Canvas {
         final_image
     }
 
-    pub fn add_line(&mut self, x0: usize, y0: usize, x1: usize, y1: usize, width: usize) {
+    pub fn add_line(&mut self, x0: usize, y0: usize, x1: usize, y1: usize, width: usize) -> usize {
         self.add_layer(Layer {
             id: self.current_layer_id,
             position: LayerPosition::Center,
@@ -203,6 +248,34 @@ impl Canvas {
                 fill_color: 0,
             }),
         });
+        return self.current_layer_id;
+    }
+    pub fn add_rectangle(
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+        stroke_width: usize,
+        stroke_color: u32,
+        fill_color: u32,
+    ) -> usize {
+        self.add_layer(Layer {
+            id: self.current_layer_id,
+            position: LayerPosition::Center,
+            scale: 1.0,
+            element: Element::Graphic(Graphic {
+                graphic_type: GraphicType::Rectangle {
+                    start: (x, y),
+                    width,
+                    height,
+                },
+                stroke_width,
+                stroke_color,
+                fill_color,
+            }),
+        });
+        return self.current_layer_id;
     }
 
     pub fn bring_layer_to_front(&mut self, layer_id: usize) {
@@ -231,6 +304,7 @@ impl Canvas {
     }
 }
 
+#[derive(Debug)]
 pub struct Layer {
     pub id: usize,
     pub element: Element,
@@ -278,6 +352,7 @@ impl Layer {
     }
 }
 
+#[derive(Debug)]
 pub enum LayerPosition {
     Default,
     Point(u32, u32),
@@ -285,6 +360,7 @@ pub enum LayerPosition {
     Center,
 }
 
+#[derive(Debug)]
 pub enum Element {
     Image(Image),
     Graphic(Graphic),
