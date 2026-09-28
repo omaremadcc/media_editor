@@ -57,9 +57,15 @@ impl Canvas {
 
         let mut plot_pixel = |x: usize, y: usize, pixel: Pixel, base_index: Option<usize>| {
             if let Some(index) = base_index {
-                final_image.pixels[index + y * self.resolution.width as usize + x] = pixel;
+                let final_index = index + y * self.resolution.width as usize + x;
+                if final_index < final_image.pixels.len() {
+                    final_image.pixels[final_index] = pixel;
+                }
             } else {
-                final_image.pixels[y * self.resolution.width as usize + x] = pixel;
+                let final_index = y * self.resolution.width as usize + x;
+                if final_index < final_image.pixels.len() {
+                    final_image.pixels[final_index] = pixel;
+                }
             }
         };
 
