@@ -130,6 +130,8 @@ impl Canvas {
                             (start, end)
                         };
 
+                        let stroke_color = graphic.stroke_color;
+
                         let dy: isize = y1 as isize - y0 as isize;
                         let dx: isize = x1 as isize - x0 as isize;
 
@@ -145,14 +147,14 @@ impl Canvas {
                                             plot_pixel(
                                                 x0 + i as usize + j,
                                                 y,
-                                                Pixel::new(0, 0, 0, None),
+                                                Pixel::from_hex(stroke_color),
                                                 None,
                                             );
                                         } else {
                                             plot_pixel(
                                                 x0 + i as usize,
                                                 y + j,
-                                                Pixel::new(0, 0, 0, None),
+                                                Pixel::from_hex(stroke_color),
                                                 None,
                                             );
                                         }
@@ -233,7 +235,15 @@ impl Canvas {
         final_image
     }
 
-    pub fn add_line(&mut self, x0: usize, y0: usize, x1: usize, y1: usize, width: usize) -> usize {
+    pub fn add_line(
+        &mut self,
+        x0: usize,
+        y0: usize,
+        x1: usize,
+        y1: usize,
+        width: usize,
+        stroke_color: u32,
+    ) -> usize {
         self.add_layer(Layer {
             id: self.current_layer_id,
             position: LayerPosition::Center,
@@ -244,7 +254,7 @@ impl Canvas {
                     end: (x1, y1),
                 },
                 stroke_width: width,
-                stroke_color: 0,
+                stroke_color,
                 fill_color: 0,
             }),
         });
