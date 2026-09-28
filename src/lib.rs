@@ -27,6 +27,24 @@ impl Pixel {
         Self { r, g, b, a }
     }
 
+    pub fn default() -> Self {
+        Self {
+            r: 0,
+            g: 0,
+            b: 0,
+            a: None,
+        }
+    }
+
+    pub fn from_hex(hex: u32) -> Self {
+        Self {
+            r: ((hex >> 16) & 0xFF) as u8,
+            g: ((hex >> 8) & 0xFF) as u8,
+            b: (hex & 0xFF) as u8,
+            a: None,
+        }
+    }
+
     pub fn to_bgr(&self) -> [u8; 3] {
         [self.b, self.g, self.r]
     }
