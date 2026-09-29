@@ -28,21 +28,11 @@ impl Canvas {
         if self.resolution.height < image.resolution.height {
             self.resolution.height = image.resolution.height;
         }
-        if let Some(position) = position {
-            self.add_layer(Layer {
-                element: Element::Image(image),
-                position,
-                scale: 1.0,
-                id: self.current_layer_id,
-            });
-        } else {
-            self.add_layer(Layer {
-                element: Element::Image(image),
-                position: LayerPosition::Default,
-                scale: 1.0,
-                id: self.current_layer_id,
-            });
-        };
+        self.add_layer(Layer::from_element(
+            Element::Image(image),
+            self.current_layer_id,
+            position,
+        ));
         return self.layers.len() - 1;
     }
 
@@ -70,10 +60,12 @@ impl Canvas {
         };
 
         for layer in &self.layers {
-            dbg!(layer.id);
-            layer.element.print_type();
             match &layer.element {
                 Element::Image(image) => {
+                    // Adjust image
+                    let mut image = image.clone();
+                    image.apply_adjustments(&layer.adjustments_stack);
+
                     let base_index;
                     let image = &image;
                     let mut pixels = &image.pixels;
@@ -245,20 +237,16 @@ impl Canvas {
         width: usize,
         stroke_color: u32,
     ) -> usize {
-        self.add_layer(Layer {
-            id: self.current_layer_id,
-            position: LayerPosition::Center,
-            scale: 1.0,
-            element: Element::Graphic(Graphic {
-                graphic_type: GraphicType::Line {
-                    start: (x0, y0),
-                    end: (x1, y1),
-                },
-                stroke_width: width,
-                stroke_color,
-                fill_color: 0,
-            }),
+        let element = Element::Graphic(Graphic {
+            graphic_type: GraphicType::Line {
+                start: (x0, y0),
+                end: (x1, y1),
+            },
+            stroke_width: width,
+            stroke_color,
+            fill_color: 0,
         });
+        self.add_layer(Layer::from_element(element, self.current_layer_id, None));
         return self.current_layer_id - 1;
     }
     pub fn add_rectangle(
@@ -271,21 +259,17 @@ impl Canvas {
         stroke_color: u32,
         fill_color: u32,
     ) -> usize {
-        self.add_layer(Layer {
-            id: self.current_layer_id,
-            position: LayerPosition::Center,
-            scale: 1.0,
-            element: Element::Graphic(Graphic {
-                graphic_type: GraphicType::Rectangle {
-                    start: (x, y),
-                    width,
-                    height,
-                },
-                stroke_width,
-                stroke_color,
-                fill_color,
-            }),
+        let element = Element::Graphic(Graphic {
+            graphic_type: GraphicType::Rectangle {
+                start: (x, y),
+                width,
+                height,
+            },
+            stroke_width,
+            stroke_color,
+            fill_color,
         });
+        self.add_layer(Layer::from_element(element, self.current_layer_id, None));
         return self.current_layer_id - 1;
     }
 
@@ -322,6 +306,7 @@ pub struct Layer {
     pub element: Element,
     pub position: LayerPosition,
     pub scale: f32,
+    pub adjustments_stack: Vec<Adjustment>,
 }
 
 impl Layer {
@@ -362,6 +347,40 @@ impl Layer {
     pub fn scale_layer(&mut self, scale: f32) {
         self.scale = scale;
     }
+
+    pub fn change_exposure(&mut self, exposure: f32) {
+        self.adjustments_stack.push(Adjustment::Exposure(exposure));
+    }
+    pub fn change_brightness(&mut self, brightness: f32) {
+        self.adjustments_stack
+            .push(Adjustment::Brightness(brightness));
+    }
+    pub fn change_saturation(&mut self, saturation: f32) {
+        self.adjustments_stack
+            .push(Adjustment::Saturation(saturation));
+    }
+    pub fn rotate_image_to_right(&mut self) {
+        self.adjustments_stack.push(Adjustment::RotateRight);
+    }
+    pub fn rotate_image_to_left(&mut self) {
+        self.adjustments_stack.push(Adjustment::RotateLeft);
+    }
+    pub fn mirror_image_horizontally(&mut self) {
+        self.adjustments_stack.push(Adjustment::FlipHorizontal);
+    }
+    pub fn mirror_image_vertically(&mut self) {
+        self.adjustments_stack.push(Adjustment::FlipVertical);
+    }
+
+    pub fn from_element(element: Element, id: usize, position: Option<LayerPosition>) -> Self {
+        Self {
+            element,
+            position: position.unwrap_or(LayerPosition::Default),
+            scale: 1.0,
+            id,
+            adjustments_stack: Vec::new(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -396,4 +415,15 @@ impl Element {
             },
         }
     }
+}
+
+#[derive(Debug)]
+pub enum Adjustment {
+    Exposure(f32),
+    Brightness(f32),
+    Saturation(f32),
+    RotateRight,
+    RotateLeft,
+    FlipHorizontal,
+    FlipVertical,
 }

@@ -37,19 +37,14 @@ fn main() -> () {
     // layer_2.image.change_exposure(200.0);
     let mut layer_3 = canvas.get_mut_layer(id_of_layer_3);
     // let mut layer_4 = canvas.get_mut_layer(id_of_layer_4);
-    // // layer_4.image.change_hue(90.0);
+    layer_3.change_exposure(2.0);
+
     // let mut layer_5 = canvas.get_mut_layer(id_of_layer_5);
     // layer_5.image.change_exposure(2.0);
     // canvas.bring_layer_forward(id_of_layer_2);
 
     let id_of_line_layer = canvas.add_line(100, 400, 0, 200, 10, 0x008000);
     let id_of_rectangle_layer = canvas.add_rectangle(100, 100, 200, 200, 5, 0xFFA500, 0x00000);
-
-    canvas.send_layer_backward(id_of_rectangle_layer);
-    canvas.send_layer_backward(id_of_line_layer);
-    canvas.bring_layer_forward(id_of_line_layer);
-    canvas.bring_layer_forward(id_of_rectangle_layer);
-    canvas.bring_layer_to_front(id_of_layer_3);
 
     let final_image = canvas.to_image();
     final_image.write_to_bmp("output12.bmp").unwrap();

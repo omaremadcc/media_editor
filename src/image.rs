@@ -1,9 +1,11 @@
+use crate::canvas::Adjustment;
 use crate::{Resolution, utils::calculate_little_endian};
+
 use std::io::Error;
 
 use super::Pixel;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Image {
     pub pixels: Vec<Pixel>,
     pub resolution: Resolution,
@@ -217,5 +219,33 @@ impl Image {
             }
         }
         self.pixels = new_pixels;
+    }
+
+    pub fn apply_adjustments(&mut self, adjustments: &Vec<Adjustment>) {
+        for adjustment in adjustments {
+            match adjustment {
+                Adjustment::Exposure(exposure) => {
+                    self.change_exposure(*exposure);
+                }
+                Adjustment::Brightness(brightness) => {
+                    self.change_brightness(*brightness);
+                }
+                Adjustment::Saturation(saturation) => {
+                    self.change_saturation(*saturation);
+                }
+                Adjustment::RotateRight => {
+                    self.rotate_image_to_right();
+                }
+                Adjustment::RotateLeft => {
+                    self.rotate_image_to_left();
+                }
+                Adjustment::FlipHorizontal => {
+                    self.mirror_image_horizontally();
+                }
+                Adjustment::FlipVertical => {
+                    self.mirror_image_vertically();
+                }
+            }
+        }
     }
 }
