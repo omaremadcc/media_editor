@@ -45,8 +45,11 @@ fn main() -> () {
     let id_of_line_layer = canvas.add_line(100, 400, 0, 200, 10, 0x008000);
     let id_of_rectangle_layer = canvas.add_rectangle(100, 100, 200, 200, 5, 0xFFA500, 0x00000);
 
-    // let mut layer_of_rectangle = canvas.get_mut_layer(id_of_rectangle_layer);
+    canvas.send_layer_backward(id_of_rectangle_layer);
     canvas.send_layer_backward(id_of_line_layer);
+    canvas.bring_layer_forward(id_of_line_layer);
+    canvas.bring_layer_forward(id_of_rectangle_layer);
+    canvas.bring_layer_to_front(id_of_layer_3);
 
     let final_image = canvas.to_image();
     final_image.write_to_bmp("output12.bmp").unwrap();

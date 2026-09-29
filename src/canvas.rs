@@ -71,6 +71,7 @@ impl Canvas {
 
         for layer in &self.layers {
             dbg!(layer.id);
+            layer.element.print_type();
             match &layer.element {
                 Element::Image(image) => {
                     let base_index;
@@ -258,7 +259,7 @@ impl Canvas {
                 fill_color: 0,
             }),
         });
-        return self.current_layer_id;
+        return self.current_layer_id - 1;
     }
     pub fn add_rectangle(
         &mut self,
@@ -285,7 +286,7 @@ impl Canvas {
                 fill_color,
             }),
         });
-        return self.current_layer_id;
+        return self.current_layer_id - 1;
     }
 
     pub fn bring_layer_to_front(&mut self, layer_id: usize) {
@@ -301,6 +302,7 @@ impl Canvas {
         }
     }
     pub fn send_layer_backward(&mut self, layer_id: usize) {
+        println!("Hi from inside send layer backward");
         if let Some(index) = self.layers.iter().position(|layer| layer.id == layer_id) {
             let layer = self.layers.remove(index);
             self.layers.insert(index - 1, layer);
@@ -379,5 +381,19 @@ pub enum Element {
 impl Element {
     pub fn is_image(&self) -> bool {
         matches!(self, Element::Image(_))
+    }
+
+    pub fn print_type(&self) {
+        match self {
+            Element::Image(_) => println!("Image"),
+            Element::Graphic(graphic) => match graphic.graphic_type {
+                GraphicType::Line { .. } => {
+                    println!("Line");
+                }
+                GraphicType::Rectangle { .. } => {
+                    println!("Rectangle");
+                }
+            },
+        }
     }
 }
