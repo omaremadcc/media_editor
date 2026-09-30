@@ -109,6 +109,7 @@ impl Canvas {
                         for col in 0..target_width {
                             let col = target_width - col - 1;
                             let index = (row * target_width + col) as usize;
+
                             let pixel = pixels[index];
                             plot_pixel(col, row, pixel, Some(base_index as usize));
                         }

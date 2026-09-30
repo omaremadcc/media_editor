@@ -36,7 +36,8 @@ impl Image {
 
         for (index, byte) in buffer[pixel_offset..].into_iter().enumerate() {
             let mod_index = index % (row_padded_bytes) as usize;
-            if (mod_index as usize) >= (width as usize * 3) {
+            let width_per_pixel = if bits_per_pixel == 32 { 4 } else { 3 };
+            if (mod_index as usize) >= (width as usize * width_per_pixel) {
                 continue;
             }
             no_padding_pixel_bytes.push(byte.clone());
@@ -59,7 +60,7 @@ impl Image {
         })
     }
 
-    pub fn write_to_bmp(&self, path: &str) -> Result<(), Error> {
+    pub fn write_to_bmp(&self, path: &str, is_alpha: bool) -> Result<(), Error> {
         let mut file = Vec::new();
         // Magic numbers for bmp format
         file.push(0x42);
@@ -77,7 +78,11 @@ impl Image {
             file.push(0);
         }
         // Header Size
-        file.push(40);
+        if is_alpha {
+            file.push(108);
+        } else {
+            file.push(40);
+        }
         for _ in 0..3 {
             file.push(0);
         }
@@ -94,14 +99,23 @@ impl Image {
         file.push(1);
         file.push(0);
         // Bits per pixel
-        file.push(24 as u8);
+        if is_alpha {
+            file.push(32 as u8);
+        } else {
+            file.push(24 as u8);
+        }
         file.push(0);
         // compression
-        for _ in 0..4 {
+        if is_alpha {
+            file.push(3);
+        } else {
+            file.push(0);
+        }
+        for _ in 0..3 {
             file.push(0);
         }
         // image data size
-        let bytes_per_pixel = 3 as usize;
+        let bytes_per_pixel = if is_alpha { 4 } else { 3 } as usize;
         let width = self.resolution.width;
         let row_ideal_size = (width * bytes_per_pixel + bytes_per_pixel) & !bytes_per_pixel;
         let row_padding = row_ideal_size - bytes_per_pixel * width;
@@ -111,6 +125,21 @@ impl Image {
         // unused
         for _ in 0..16 {
             file.push(0);
+        }
+
+        // RGBA explicit masks for alpha channel
+        if is_alpha {
+            // Red Mask
+            file.extend_from_slice(&[0, 0, 0xFF, 0]);
+            // Green Mask
+            file.extend_from_slice(&[0, 0xFF, 0, 0]);
+            // Blue Mask
+            file.extend_from_slice(&[0xFF, 0, 0, 0]);
+            // Alpha Mask
+            file.extend_from_slice(&[0, 0, 0, 0xFF]);
+            for _ in 0..36 {
+                file.push(0);
+            }
         }
 
         println!("row_ideal_size: {row_ideal_size}, row_padding: {row_padding}");
@@ -123,7 +152,12 @@ impl Image {
         for row in self.pixels.chunks_exact(width as usize) {
             // 1. Write pixel bytes for this row
             for pixel in row {
-                file.extend_from_slice(&pixel.to_bgr());
+                if is_alpha {
+                    // file.extend_from_slice(&pixel.to_bgra());
+                    file.extend_from_slice(&pixel.to_bgra())
+                } else {
+                    file.extend_from_slice(&pixel.to_bgr());
+                }
             }
             // 2. Append padding at the end of the row
             file.extend(std::iter::repeat(0).take(row_padding as usize));
