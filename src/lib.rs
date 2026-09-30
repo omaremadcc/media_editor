@@ -3,6 +3,7 @@ pub mod canvas;
 pub mod colors;
 pub mod graphic;
 pub mod image;
+pub mod resolutions;
 pub mod utils;
 
 #[derive(Debug, Clone, Copy)]

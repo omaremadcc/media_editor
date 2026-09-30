@@ -25,7 +25,7 @@ fn main() -> () {
     let buffer_2 = std::fs::read("low_no_merge.bmp").expect("Failed to read image file");
     let image_low = Image::read_from_bmp(&buffer_2).unwrap();
 
-    let mut canvas = canvas::Canvas::new(Resolution::new(0, 0));
+    let mut canvas = canvas::Canvas::new(Resolution::p1920_1080());
     // let id_of_layer = canvas.add_image(image, None);
     let id_of_layer_2 = canvas.add_image(image_low, None);
     let id_of_layer_3 = canvas.add_image(image3, None);
@@ -37,7 +37,7 @@ fn main() -> () {
     // layer_2.image.change_exposure(200.0);
     let mut layer_3 = canvas.get_mut_layer(id_of_layer_3);
     // let mut layer_4 = canvas.get_mut_layer(id_of_layer_4);
-    layer_3.change_exposure(2.0);
+    // layer_3.change_exposure(2.0);
 
     // let mut layer_5 = canvas.get_mut_layer(id_of_layer_5);
     // layer_5.image.change_exposure(2.0);
