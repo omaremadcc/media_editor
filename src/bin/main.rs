@@ -1,5 +1,5 @@
 #![allow(unused)]
-use images_editor::{Resolution, canvas, image::Image};
+use images_editor::{Resolution, canvas, colors::Colors, image::Image};
 
 fn main() -> () {
     // let image = images_editor::bmp::Bmp::read_from_file("low_no_merge.bmp").unwrap();
@@ -43,8 +43,9 @@ fn main() -> () {
     // layer_5.image.change_exposure(2.0);
     // canvas.bring_layer_forward(id_of_layer_2);
 
-    let id_of_line_layer = canvas.add_line(100, 400, 0, 200, 10, 0x008000);
-    let id_of_rectangle_layer = canvas.add_rectangle(100, 100, 200, 200, 5, 0xFFA500, 0x00000);
+    let id_of_line_layer = canvas.add_line(100, 400, 0, 200, 10, Colors::red());
+    let id_of_rectangle_layer =
+        canvas.add_rectangle(100, 100, 200, 200, 5, Colors::blue(), Colors::purple());
 
     let final_image = canvas.to_image();
     final_image.write_to_bmp("output12.bmp").unwrap();

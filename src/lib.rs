@@ -1,5 +1,6 @@
 pub mod bmp;
 pub mod canvas;
+pub mod colors;
 pub mod graphic;
 pub mod image;
 pub mod utils;
