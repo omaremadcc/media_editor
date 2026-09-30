@@ -52,7 +52,7 @@ impl Pixel {
     }
 
     pub fn to_bgra(&self) -> [u8; 4] {
-        [self.b, self.g, self.r, self.a.unwrap_or(0)]
+        [self.b, self.g, self.r, self.a.unwrap_or(255)]
     }
 
     pub fn to_hex(&self) -> u32 {
