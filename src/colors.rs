@@ -1,5 +1,3 @@
-use crate::Pixel;
-
 pub struct Colors;
 
 impl Colors {
