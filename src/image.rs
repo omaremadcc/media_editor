@@ -137,7 +137,7 @@ impl Image {
             file.extend_from_slice(&[0xFF, 0, 0, 0]);
             // Alpha Mask
             file.extend_from_slice(&[0, 0, 0, 0xFF]);
-            for _ in 0..36 {
+            for _ in 0..52 {
                 file.push(0);
             }
         }
