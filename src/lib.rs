@@ -132,6 +132,43 @@ impl Pixel {
         self.g = g;
         self.b = b;
     }
+
+    pub fn merge_with(&self, pixel: &Pixel) -> Pixel {
+        // Background pixel as self
+
+        let a_bg = self.a;
+        let a_fg = pixel.a;
+        let normalized_alpha_bg = a_bg as f32 / 255.0;
+        let normalized_alpha_fg = a_fg as f32 / 255.0;
+
+        let normalized_alpha_result =
+            normalized_alpha_bg * (1.0 - normalized_alpha_fg) + normalized_alpha_fg;
+
+        let alpha_result = (normalized_alpha_result * 255.0) as u8;
+
+        if normalized_alpha_result == 0.0 {
+            return Pixel::empty();
+        }
+
+        let result_red = ((pixel.r as f32 * normalized_alpha_fg
+            + (self.r as f32 * normalized_alpha_bg) * (1.0 - normalized_alpha_fg))
+            / normalized_alpha_result)
+            .round() as u8;
+        let result_green = ((pixel.g as f32 * normalized_alpha_fg
+            + (self.g as f32 * normalized_alpha_bg) * (1.0 - normalized_alpha_fg))
+            / normalized_alpha_result)
+            .round() as u8;
+        let result_blue = ((pixel.b as f32 * normalized_alpha_fg
+            + (self.b as f32 * normalized_alpha_bg) * (1.0 - normalized_alpha_fg))
+            / normalized_alpha_result)
+            .round() as u8;
+
+        return Pixel::new(result_red, result_green, result_blue, alpha_result);
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.a == 0
+    }
 }
 
 fn adjust_pixel_channel_exposure(channel: u8, factor: f32) -> u8 {
