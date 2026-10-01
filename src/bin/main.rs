@@ -7,7 +7,7 @@ use std::fs;
 fn main() -> () {
     // let image = images_editor::bmp::Bmp::read_from_file("low_no_merge.bmp").unwrap();
     // image.write_to_file("output2.bmp").unwrap();
-    // let binary_data: Vec<u8> = fs::read("low.bmp").expect("Failed to read image file");
+    // let binary_data: Vec<u8> = fs::read("low_no_merge.bmp").expect("Failed to read image file");
     // println!("Binary data length: {}", binary_data.len());
     // let data_offset = calculate_little_endian(&binary_data[10..14]) as usize;
     // println!("Data offset: {}", data_offset);
@@ -57,9 +57,9 @@ fn main() -> () {
     let buffer = std::fs::read("no_bg.bmp").expect("Failed to read image file");
     // println!("{:?}", &buffer[..]);
     let image = Image::read_from_bmp(&buffer).unwrap();
-    let rectangle = canvas.add_rectangle(20, 20, 100, 100, 3, Colors::blue(), Colors::red());
-    println!("{:?}", image.pixels[0]);
+    // println!("{:?}", image.pixels[0]);
 
+    let rectangle = canvas.add_rectangle(20, 20, 100, 100, 3, Colors::blue(), Colors::red());
     let id_of_layer = canvas.add_image(image, None);
     let final_image = canvas.to_image();
     final_image.write_to_bmp("output13.bmp", true).unwrap();

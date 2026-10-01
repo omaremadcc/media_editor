@@ -42,19 +42,17 @@ impl Canvas {
 
     pub fn to_image(&self) -> Image {
         let num_pixels = self.resolution.width as usize * self.resolution.height as usize;
-        let empty_pixels = vec![Pixel::new(255, 255, 255, None); num_pixels];
+        let empty_pixels = vec![Pixel::empty(); num_pixels];
         let mut final_image = Image::new(empty_pixels, self.resolution.clone());
 
         let mut plot_pixel = |x: usize, y: usize, pixel: Pixel, base_index: Option<usize>| {
-            if let Some(index) = base_index {
-                let final_index = index + y * self.resolution.width as usize + x;
-                if final_index < final_image.pixels.len() {
-                    final_image.pixels[final_index] = pixel;
-                }
-            } else {
-                let final_index = y * self.resolution.width as usize + x;
-                if final_index < final_image.pixels.len() {
-                    final_image.pixels[final_index] = pixel;
+            let index = base_index.unwrap_or(0) + y * self.resolution.width as usize + x;
+            if index < final_image.pixels.len() {
+                if pixel.a != 255 && !final_image.pixels[index].is_empty() {
+                    final_image.pixels[index] = final_image.pixels[index].merge_with(&pixel);
+                    // final_image.pixels[index] = pixel;
+                } else {
+                    final_image.pixels[index] = pixel;
                 }
             }
         };
@@ -71,8 +69,7 @@ impl Canvas {
                     let mut pixels = &image.pixels;
                     let target_width = (image.resolution.width as f32 * layer.scale) as usize;
                     let target_height = (image.resolution.height as f32 * layer.scale) as usize;
-                    let mut scaled_pixels =
-                        vec![Pixel::new(255, 255, 255, None); target_width * target_height];
+                    let mut scaled_pixels = vec![Pixel::empty(); target_width * target_height];
 
                     if layer.scale != 1.0 {
                         for row in 0..target_height {
@@ -158,7 +155,7 @@ impl Canvas {
                                         // This will work because dx is always positive (we reorder the points so x0 < x1)
                                         dbg!(x0 + i as usize),
                                         dbg!(y),
-                                        Pixel::new(0, 0, 0, None),
+                                        Pixel::empty(),
                                         None,
                                     );
                                 }
