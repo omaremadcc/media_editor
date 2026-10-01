@@ -22,19 +22,19 @@ pub struct Pixel {
     pub r: u8,
     pub g: u8,
     pub b: u8,
-    pub a: Option<u8>,
+    pub a: u8,
 }
 impl Pixel {
-    pub fn new(r: u8, g: u8, b: u8, a: Option<u8>) -> Self {
+    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
     }
 
-    pub fn default() -> Self {
+    pub fn empty() -> Self {
         Self {
             r: 0,
             g: 0,
             b: 0,
-            a: None,
+            a: 0,
         }
     }
 
@@ -43,7 +43,7 @@ impl Pixel {
             r: ((hex >> 16) & 0xFF) as u8,
             g: ((hex >> 8) & 0xFF) as u8,
             b: (hex & 0xFF) as u8,
-            a: None,
+            a: 255,
         }
     }
 
@@ -52,7 +52,7 @@ impl Pixel {
     }
 
     pub fn to_bgra(&self) -> [u8; 4] {
-        [self.b, self.g, self.r, self.a.unwrap_or(255)]
+        [self.b, self.g, self.r, self.a]
     }
 
     pub fn to_hex(&self) -> u32 {
