@@ -43,11 +43,7 @@ impl Image {
             no_padding_pixel_bytes.push(byte.clone());
         }
         for chunk in no_padding_pixel_bytes.chunks_exact(bits_per_pixel / 8) {
-            let alpha = if bits_per_pixel == 32 {
-                chunk[3]
-            } else {
-                255
-            };
+            let alpha = if bits_per_pixel == 32 { chunk[3] } else { 255 };
 
             pixels.push(Pixel::new(chunk[2], chunk[1], chunk[0], alpha));
         }

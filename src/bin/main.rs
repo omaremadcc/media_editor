@@ -54,15 +54,15 @@ fn main() -> () {
     //
 
     let mut canvas = canvas::Canvas::new(Resolution::new(0, 0));
-    let buffer = std::fs::read("no_bg.bmp").expect("Failed to read image file");
+    let buffer = std::fs::read("png_no_bg.png").expect("Failed to read image file");
     // println!("{:?}", &buffer[..]);
-    let image = Image::read_from_bmp(&buffer).unwrap();
+    let image = Image::read_from_png(&buffer).unwrap();
     // println!("{:?}", image.pixels[0]);
 
     let rectangle = canvas.add_rectangle(20, 20, 100, 100, 3, Colors::blue(), Colors::red());
     let id_of_layer = canvas.add_image(image, None);
     let final_image = canvas.to_image();
-    final_image.write_to_bmp("output13.bmp", true).unwrap();
+    final_image.write_to_bmp("output13.bmp", false).unwrap();
 
     let buffer_2 = std::fs::read("output13.bmp").expect("Failed to read image file");
     // println!("{:?}", &buffer_2[..]);
