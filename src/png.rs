@@ -1,8 +1,10 @@
 use crate::image::Image;
 use crate::utils;
 use crate::{Pixel, Resolution};
+use flate2::Compression;
 use flate2::read::ZlibDecoder;
-use std::io::{Error, Read};
+use flate2::write::ZlibEncoder;
+use std::io::{Error, Read, Write};
 
 impl Image {
     pub fn read_from_png(buffer: &[u8]) -> Result<Self, Error> {
@@ -146,4 +148,75 @@ impl Image {
 
         Ok(image)
     }
+
+    pub fn write_to_png(&self, path: &str, transparent: bool) -> Result<(), Error> {
+        let mut file = Vec::new();
+
+        // Add PNG signature
+        file.extend_from_slice(&[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+        // Add IHDR chunk
+        let mut ihdr = Vec::with_capacity(13);
+        println!("start: {}", ihdr.len());
+
+        ihdr.extend_from_slice(&(self.resolution.width as u32).to_be_bytes());
+        println!("after width: {}", ihdr.len());
+
+        ihdr.extend_from_slice(&(self.resolution.height as u32).to_be_bytes());
+        println!("after height: {}", ihdr.len());
+
+        ihdr.extend_from_slice(&[8, 6, 0, 0, 0]);
+        println!("after metadata: {}", ihdr.len());
+        append_chunk(&mut file, b"IHDR", &ihdr);
+
+        println!("{}", ihdr.len());
+
+        // Raw scanlines, using filter type 0 (None).
+        let width = self.resolution.width as usize;
+        let height = self.resolution.height as usize;
+
+        let mut raw = Vec::with_capacity(height * (1 + width * 4));
+
+        for y in 0..height {
+            raw.push(0); // Filter type: None
+
+            for x in 0..width {
+                let p = &self.pixels[y * width + x];
+                raw.extend_from_slice(&[p.r, p.g, p.b, p.a]);
+            }
+        }
+
+        // Compress all scanlines into one zlib stream.
+        let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(&raw)?;
+        let compressed = encoder.finish()?;
+
+        append_chunk(&mut file, b"IDAT", &compressed);
+        append_chunk(&mut file, b"IEND", &[]);
+
+        std::fs::write(path, file)?;
+
+        // println!(
+        //     "width: {}, height: {}, pixels: {}",
+        //     self.resolution.width,
+        //     self.resolution.height,
+        //     self.pixels.len()
+        // );
+
+        Ok(())
+    }
+}
+
+fn append_chunk(file: &mut Vec<u8>, kind: &[u8; 4], data: &[u8]) {
+    file.extend_from_slice(&(data.len() as u32).to_be_bytes());
+    file.extend_from_slice(kind);
+    file.extend_from_slice(data);
+
+    let mut crc_data = Vec::with_capacity(4 + data.len());
+    crc_data.extend_from_slice(kind);
+    crc_data.extend_from_slice(data);
+
+    let mut hasher = crc32fast::Hasher::new();
+    hasher.update(&crc_data);
+    file.extend_from_slice(&hasher.finalize().to_be_bytes());
 }
