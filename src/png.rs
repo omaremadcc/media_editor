@@ -152,63 +152,67 @@ impl Image {
     pub fn write_to_png(&self, path: &str, transparent: bool) -> Result<(), Error> {
         let mut file = Vec::new();
 
-        // Add PNG signature
+        // Png File Extension
         file.extend_from_slice(&[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
-        // Add IHDR chunk
-        let mut ihdr = Vec::with_capacity(13);
-        println!("start: {}", ihdr.len());
+        let mut ihdr_chunk_data = Vec::new();
 
-        ihdr.extend_from_slice(&(self.resolution.width as u32).to_be_bytes());
-        println!("after width: {}", ihdr.len());
+        let width = self.resolution.width;
+        let height = self.resolution.height;
 
-        ihdr.extend_from_slice(&(self.resolution.height as u32).to_be_bytes());
-        println!("after height: {}", ihdr.len());
+        // Add height and width to ihdr header
+        ihdr_chunk_data.extend_from_slice(&((width as u32).to_be_bytes()));
+        ihdr_chunk_data.extend_from_slice(&((height as u32).to_be_bytes()));
 
-        ihdr.extend_from_slice(&[8, 6, 0, 0, 0]);
-        println!("after metadata: {}", ihdr.len());
-        append_chunk(&mut file, b"IHDR", &ihdr);
+        // Bit Depth for both transparent and solid images
+        ihdr_chunk_data.push(8);
 
-        println!("{}", ihdr.len());
-
-        // Raw scanlines, using filter type 0 (None).
-        let width = self.resolution.width as usize;
-        let height = self.resolution.height as usize;
-
-        let mut raw = Vec::with_capacity(height * (1 + width * 4));
-
-        for y in 0..height {
-            raw.push(0); // Filter type: None
-
-            for x in 0..width {
-                let p = &self.pixels[y * width + x];
-                raw.extend_from_slice(&[p.r, p.g, p.b, p.a]);
-            }
+        if transparent {
+            ihdr_chunk_data.push(6);
+        } else {
+            ihdr_chunk_data.push(2);
         }
 
-        // Compress all scanlines into one zlib stream.
+        // Other data in the ihdr chunk
+        ihdr_chunk_data.extend_from_slice(&[0, 0, 0]);
+
+        // println!("ihdr len: {}", ihdr_chunk_data.len());
+
+        append_chunk(&mut file, b"IHDR", &ihdr_chunk_data);
+
+        let mut idat_chunk_data = Vec::new();
+
+        let pixels = mirror_pixels_vertically(&self.pixels, height, width);
+
+        pixels.chunks_exact(width).for_each(|pixels| {
+            // Filter type
+            idat_chunk_data.push(0);
+            for p in pixels {
+                if transparent {
+                    idat_chunk_data.extend_from_slice(&[p.r, p.g, p.b, p.a]);
+                } else {
+                    idat_chunk_data.extend_from_slice(&[p.r, p.g, p.b]);
+                }
+            }
+        });
+        println!("{}", idat_chunk_data.len());
+
         let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-        encoder.write_all(&raw)?;
+        encoder.write_all(&idat_chunk_data)?;
         let compressed = encoder.finish()?;
 
         append_chunk(&mut file, b"IDAT", &compressed);
+
         append_chunk(&mut file, b"IEND", &[]);
 
-        std::fs::write(path, file)?;
-
-        // println!(
-        //     "width: {}, height: {}, pixels: {}",
-        //     self.resolution.width,
-        //     self.resolution.height,
-        //     self.pixels.len()
-        // );
+        std::fs::write(path, file).map_err(|e| e)?;
 
         Ok(())
     }
 }
 
 fn append_chunk(file: &mut Vec<u8>, kind: &[u8; 4], data: &[u8]) {
-    file.extend_from_slice(&(data.len() as u32).to_be_bytes());
+    file.extend_from_slice(&((data.len() as u32).to_be_bytes()));
     file.extend_from_slice(kind);
     file.extend_from_slice(data);
 
@@ -219,4 +223,17 @@ fn append_chunk(file: &mut Vec<u8>, kind: &[u8; 4], data: &[u8]) {
     let mut hasher = crc32fast::Hasher::new();
     hasher.update(&crc_data);
     file.extend_from_slice(&hasher.finalize().to_be_bytes());
+}
+
+pub fn mirror_pixels_vertically(pixels: &Vec<Pixel>, height: usize, width: usize) -> Vec<Pixel> {
+    let mut new_pixels = Vec::new();
+
+    for row in 0..height {
+        let row = height - row - 1;
+        for col in 0..width {
+            let pixel = pixels[row * width + col];
+            new_pixels.push(pixel);
+        }
+    }
+    new_pixels
 }

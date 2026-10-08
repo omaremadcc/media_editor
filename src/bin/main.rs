@@ -62,7 +62,7 @@ fn main() -> () {
     let rectangle = canvas.add_rectangle(20, 20, 100, 100, 3, Colors::blue(), Colors::red());
     let id_of_layer = canvas.add_image(image, None);
     let final_image = canvas.to_image();
-    final_image.write_to_png("output13.png", false).unwrap();
+    final_image.write_to_png("output14.png", true).unwrap();
 
     let buffer_2 = std::fs::read("output13.bmp").expect("Failed to read image file");
     // println!("{:?}", &buffer_2[..]);
