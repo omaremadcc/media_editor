@@ -46,13 +46,19 @@ impl Canvas {
 
         let mut plot_pixel = |x: usize, y: usize, pixel: Pixel, base_index: Option<usize>| {
             let index = base_index.unwrap_or(0) + y * self.resolution.width as usize + x;
-            if index < final_image.pixels.len() {
+            // Make sure the pixel is not out of bounds
+            if index < final_image.pixels.len()
+                && x <= self.resolution.width
+                && y <= self.resolution.height
+            {
                 if pixel.a != 255 && !final_image.pixels[index].is_empty() {
                     final_image.pixels[index] = final_image.pixels[index].merge_with(&pixel);
                     // final_image.pixels[index] = pixel;
                 } else {
                     final_image.pixels[index] = pixel;
                 }
+            } else {
+                // println!("Out of bound");
             }
         };
 
@@ -128,7 +134,7 @@ impl Canvas {
                         let width = graphic.stroke_width;
 
                         if dx != 0 {
-                            let slope = dy / dx;
+                            let slope = dy as f32 / dx as f32;
                             let mut y = y0;
                             for i in 0..(dx + 1) {
                                 if width > 1 {
@@ -152,23 +158,21 @@ impl Canvas {
                                 } else {
                                     plot_pixel(
                                         // This will work because dx is always positive (we reorder the points so x0 < x1)
-                                        dbg!(x0 + i as usize),
-                                        dbg!(y),
-                                        Pixel::empty(),
+                                        x0 + i as usize,
+                                        y,
+                                        Pixel::from_hex(stroke_color),
                                         None,
                                     );
                                 }
 
-                                let py = slope * (i + 1) + y0 as isize;
+                                let py = (slope * (i + 1) as f32 + y0 as f32) as isize;
                                 let d0 = py - y as isize;
-                                let d1 = (y as isize + 1) - py;
-                                if (d0 - d1 <= 0 && slope < 0) || (d0 >= d1 && slope > 0) {
-                                    if slope > 0 {
+                                let d1 = y as isize + 1 - py;
+                                if (d0 - d1 <= 0 && slope < 0f32) || (d0 >= d1 && slope > 0f32) {
+                                    if slope > 0f32 {
                                         y += 1;
-                                        // dbg!(y);
                                     } else {
                                         y -= 1;
-                                        // dbg!(y);
                                     }
                                 }
                             }
@@ -328,7 +332,7 @@ impl Layer {
     pub fn center_layer_y(&mut self) {
         self.position.y = Position::Center;
     }
-    pub fn move_x_percentage(&mut self, percentage: f32) {
+    pub fn move_to_x_percentage(&mut self, percentage: f32) {
         self.position.x = Position::Percent(percentage);
     }
     pub fn move_to_percentage_y(&mut self, percentage: f32) {
