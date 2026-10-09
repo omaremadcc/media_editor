@@ -1,71 +1,36 @@
 #![allow(unused)]
 use images_editor::{
-    Resolution, canvas, colors::Colors, image::Image, utils::calculate_little_endian,
+    Resolution,
+    canvas::{self, Position},
+    colors::Colors,
+    image::Image,
+    utils::calculate_little_endian,
 };
 use std::fs;
 
 fn main() -> () {
-    // let image = images_editor::bmp::Bmp::read_from_file("low_no_merge.bmp").unwrap();
-    // image.write_to_file("output2.bmp").unwrap();
-    // let binary_data: Vec<u8> = fs::read("low_no_merge.bmp").expect("Failed to read image file");
-    // println!("Binary data length: {}", binary_data.len());
-    // let data_offset = calculate_little_endian(&binary_data[10..14]) as usize;
-    // println!("Data offset: {}", data_offset);
-    // println!("{:?}", binary_data[..].to_vec());
-
-    // for (index, chunk) in binary_data[..].chunks_exact(3).into_iter().enumerate() {
-    //     println!("{index}: ({:?}, {:?}, {:?})", chunk[2], chunk[1], chunk[0]);
-    // }
-    // let buffer = std::fs::read("low.bmp").expect("Failed to read image file");
-    // let image = Image::read_from_bmp(&buffer).unwrap();
-    // image.write_to_bmp("output5.bmp").unwrap();
-    // println!("Buffer: {:?}", &buffer[..]);
-
-    // let buffer = std::fs::read("no_bg.bmp").expect("Failed to read image file");
-    // let image = Image::read_from_bmp(&buffer).unwrap();
-    // let image2 = Image::read_from_bmp(&buffer).unwrap();
-    // let image3 = Image::read_from_bmp(&buffer).unwrap();
-    // let image4 = Image::read_from_bmp(&buffer).unwrap();
-    // let image5 = Image::read_from_bmp(&buffer).unwrap();
-    // let buffer_2 = std::fs::read("low_no_merge.bmp").expect("Failed to read image file");
-    // let image_low = Image::read_from_bmp(&buffer_2).unwrap();
-
-    // let mut canvas = canvas::Canvas::new(Resolution::new(0, 0));
-    // let id_of_layer = canvas.add_image(image, None);
-    // let id_of_layer_2 = canvas.add_image(image_low, None);
-    // let id_of_layer_3 = canvas.add_image(image3, None);
-    // let id_of_layer_4 = canvas.add_image(image4, None);
-    // let id_of_layer_5 = canvas.add_image(image5, None);
-
-    // let mut layer_1 = canvas.get_mut_layer(id_of_layer);
-    // let mut layer_2 = canvas.get_mut_layer(id_of_layer_2);
-    // layer_2.image.change_exposure(200.0);
-    // let mut layer_3 = canvas.get_mut_layer(id_of_layer_3);
-    // let mut layer_4 = canvas.get_mut_layer(id_of_layer_4);
-    // layer_3.change_exposure(2.0);
-
-    // let mut layer_5 = canvas.get_mut_layer(id_of_layer_5);
-    // layer_5.image.change_exposure(2.0);
-    // canvas.bring_layer_forward(id_of_layer_2);
-
-    //     let id_of_line_layer = canvas.add_line(100, 400, 0, 200, 10, Colors::red());
-    //     let id_of_rectangle_layer =
-    //         canvas.add_rectangle(100, 100, 200, 200, 5, Colors::blue(), Colors::purple());
-    //
-
     let mut canvas = canvas::Canvas::new(Resolution::new(0, 0));
-    let buffer = std::fs::read("png_no_bg.png").expect("Failed to read image file");
-    // println!("{:?}", &buffer[..]);
+    let buffer = std::fs::read("png.png").unwrap();
     let image = Image::read_from_png(&buffer).unwrap();
-    // println!("{:?}", image.pixels[0]);
 
-    let rectangle = canvas.add_rectangle(20, 20, 100, 100, 3, Colors::blue(), Colors::red());
-    let id_of_layer = canvas.add_image(image, None);
-    let final_image = canvas.to_image();
-    final_image.write_to_png("output14.png", true).unwrap();
+    canvas.add_image(image);
 
-    let buffer_2 = std::fs::read("output13.bmp").expect("Failed to read image file");
-    // println!("{:?}", &buffer_2[..]);
+    let buffer = std::fs::read("low.bmp").unwrap();
+    let small_image = Image::read_from_bmp(&buffer).unwrap();
 
+    let small_image_id = canvas.add_image(small_image);
+
+    let small_image_layer = canvas.get_mut_layer(small_image_id);
+    small_image_layer.set_x_position_end();
+    small_image_layer.set_y_position_end();
+    small_image_layer.scale_layer(5.);
+    small_image_layer.scale_layer(1.);
+
+    let line_id = canvas.add_line(30, 500, 200, 100, 5, Colors::rose());
+    let line_layer = canvas.get_mut_layer(line_id);
+    line_layer.change_exposure(3.);
+
+    let res = canvas.to_image();
+    res.write_to_png("output15.png", true);
     return ();
 }

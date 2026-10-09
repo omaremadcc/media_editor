@@ -21,7 +21,7 @@ impl Canvas {
         self.layers.push(layer);
         self.current_layer_id += 1;
     }
-    pub fn add_image(&mut self, image: Image, position: Option<LayerPosition>) -> usize {
+    pub fn add_image(&mut self, image: Image) -> usize {
         if self.resolution.width < image.resolution.width {
             self.resolution.width = image.resolution.width;
         }
@@ -31,7 +31,6 @@ impl Canvas {
         self.add_layer(Layer::from_element(
             Element::Image(image),
             self.current_layer_id,
-            position,
         ));
         return self.layers.len() - 1;
     }
@@ -64,7 +63,6 @@ impl Canvas {
                     let mut image = image.clone();
                     image.apply_adjustments(&layer.adjustments_stack);
 
-                    let base_index;
                     let image = &image;
                     let mut pixels = &image.pixels;
                     let target_width = (image.resolution.width as f32 * layer.scale) as usize;
@@ -82,26 +80,27 @@ impl Canvas {
                         }
                         pixels = &scaled_pixels;
                     }
-                    match layer.position {
-                        LayerPosition::Default => base_index = 0,
-                        LayerPosition::Point(x, y) => {
-                            base_index = y * self.resolution.width as u32 + x
-                        }
-                        LayerPosition::Percent(x, y) => {
-                            base_index = (y * self.resolution.height as f32) as u32
-                                * self.resolution.width as u32
-                                + (x as f32 * self.resolution.width as f32) as u32
-                        }
-                        LayerPosition::Center => {
-                            base_index = ((self.resolution.height as f32 / 2.0)
-                                - (target_height as f32 / 2.0))
+                    let pixel_x = match layer.position.x {
+                        Position::Default => 0,
+                        Position::Point(x) => x,
+                        Position::Percent(x) => (x as f32 * self.resolution.width as f32) as u32,
+                        Position::Center => {
+                            ((self.resolution.width as f32 / 2.0) - (target_width as f32 / 2.0))
                                 as u32
-                                * self.resolution.width as u32
-                                + ((self.resolution.width as f32 / 2.0)
-                                    - (target_width as f32 / 2.0))
-                                    as u32
                         }
-                    }
+                        Position::End => (self.resolution.width - target_width) as u32,
+                    };
+                    let pixel_y = match layer.position.y {
+                        Position::Default => 0,
+                        Position::Point(y) => y,
+                        Position::Percent(y) => (y * self.resolution.height as f32) as u32,
+                        Position::Center => {
+                            ((self.resolution.height as f32 / 2.0) - (target_height as f32 / 2.0))
+                                as u32
+                        }
+                        Position::End => (self.resolution.height - target_height) as u32,
+                    };
+                    let base_index = pixel_x + (pixel_y * self.resolution.width as u32);
                     for row in 0..target_height {
                         for col in 0..target_width {
                             let col = target_width - col - 1;
@@ -244,7 +243,7 @@ impl Canvas {
             stroke_color,
             fill_color: 0,
         });
-        self.add_layer(Layer::from_element(element, self.current_layer_id, None));
+        self.add_layer(Layer::from_element(element, self.current_layer_id));
         return self.current_layer_id - 1;
     }
     pub fn add_rectangle(
@@ -267,7 +266,7 @@ impl Canvas {
             stroke_color,
             fill_color,
         });
-        self.add_layer(Layer::from_element(element, self.current_layer_id, None));
+        self.add_layer(Layer::from_element(element, self.current_layer_id));
         return self.current_layer_id - 1;
     }
 
@@ -308,39 +307,38 @@ pub struct Layer {
 }
 
 impl Layer {
+    pub fn set_x_position_end(&mut self) {
+        self.position.x = Position::End
+    }
+    pub fn set_y_position_end(&mut self) {
+        self.position.y = Position::End
+    }
+    pub fn set_x_position_start(&mut self) {
+        self.position.x = Position::Default
+    }
+    pub fn set_y_position_start(&mut self) {
+        self.position.y = Position::Default
+    }
     pub fn center_layer(&mut self) {
-        self.position = LayerPosition::Center;
+        self.position = LayerPosition::center();
+    }
+    pub fn center_layer_x(&mut self) {
+        self.position.x = Position::Center;
+    }
+    pub fn center_layer_y(&mut self) {
+        self.position.y = Position::Center;
     }
     pub fn move_x_percentage(&mut self, percentage: f32) {
-        if let LayerPosition::Percent(x, y) = self.position {
-            self.position = LayerPosition::Percent(x + percentage, y);
-        } else {
-            self.position = LayerPosition::Percent(percentage, 0.0);
-        }
+        self.position.x = Position::Percent(percentage);
     }
-    pub fn move_y_percentage(&mut self, percentage: f32) {
-        if let LayerPosition::Percent(x, y) = self.position {
-            self.position = LayerPosition::Percent(x, y + percentage);
-        } else {
-            self.position = LayerPosition::Percent(0.0, percentage);
-        }
+    pub fn move_to_percentage_y(&mut self, percentage: f32) {
+        self.position.y = Position::Percent(percentage);
     }
-    pub fn move_to_point(&mut self, x: u32, y: u32) {
-        self.position = LayerPosition::Point(x, y);
+    pub fn move_to_point_x(&mut self, x: u32) {
+        self.position.x = Position::Point(x);
     }
-    pub fn move_x(&mut self, pixels: u32) {
-        if let LayerPosition::Point(x, y) = self.position {
-            self.position = LayerPosition::Point(x + pixels, y);
-        } else {
-            self.position = LayerPosition::Point(pixels, 0);
-        }
-    }
-    pub fn move_y(&mut self, pixels: u32) {
-        if let LayerPosition::Point(x, y) = self.position {
-            self.position = LayerPosition::Point(x, y + pixels);
-        } else {
-            self.position = LayerPosition::Point(0, pixels);
-        }
+    pub fn move_to_point_y(&mut self, y: u32) {
+        self.position.y = Position::Point(y);
     }
     pub fn scale_layer(&mut self, scale: f32) {
         self.scale = scale;
@@ -370,10 +368,10 @@ impl Layer {
         self.adjustments_stack.push(Adjustment::FlipVertical);
     }
 
-    pub fn from_element(element: Element, id: usize, position: Option<LayerPosition>) -> Self {
+    pub fn from_element(element: Element, id: usize) -> Self {
         Self {
             element,
-            position: position.unwrap_or(LayerPosition::Default),
+            position: LayerPosition::default(),
             scale: 1.0,
             id,
             adjustments_stack: Vec::new(),
@@ -382,11 +380,33 @@ impl Layer {
 }
 
 #[derive(Debug)]
-pub enum LayerPosition {
+pub struct LayerPosition {
+    pub x: Position,
+    pub y: Position,
+}
+
+impl LayerPosition {
+    pub fn default() -> Self {
+        return Self {
+            x: Position::Default,
+            y: Position::Default,
+        };
+    }
+    pub fn center() -> Self {
+        return Self {
+            x: Position::Center,
+            y: Position::Center,
+        };
+    }
+}
+
+#[derive(Debug)]
+pub enum Position {
     Default,
-    Point(u32, u32),
-    Percent(f32, f32),
+    Point(u32),
+    Percent(f32),
     Center,
+    End,
 }
 
 #[derive(Debug)]
