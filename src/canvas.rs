@@ -287,10 +287,18 @@ impl Canvas {
         }
     }
     pub fn send_layer_backward(&mut self, layer_id: usize) {
-        println!("Hi from inside send layer backward");
-        if let Some(index) = self.layers.iter().position(|layer| layer.id == layer_id) {
-            let layer = self.layers.remove(index);
-            self.layers.insert(index - 1, layer);
+        // Make sure this isn't the first layer
+        if self
+            .layers
+            .iter()
+            .position(|layer| layer.id == layer_id)
+            .unwrap_or(0)
+            != 0
+        {
+            if let Some(index) = self.layers.iter().position(|layer| layer.id == layer_id) {
+                let layer = self.layers.remove(index);
+                self.layers.insert(index - 1, layer);
+            }
         }
     }
     pub fn send_layer_to_back(&mut self, layer_id: usize) {
