@@ -91,20 +91,41 @@ impl Canvas {
                         Position::Point(x) => x,
                         Position::Percent(x) => (x as f32 * self.resolution.width as f32) as u32,
                         Position::Center => {
-                            ((self.resolution.width as f32 / 2.0) - (target_width as f32 / 2.0))
-                                as u32
+                            if target_width < (self.resolution.width as f32 / 2.0) as usize {
+                                ((self.resolution.width as f32 / 2.0) - (target_width as f32 / 2.0))
+                                    as u32
+                            } else {
+                                (self.resolution.width as f32 / 2.0) as u32
+                            }
                         }
-                        Position::End => (self.resolution.width - target_width) as u32,
+                        Position::End => {
+                            if target_width < self.resolution.width {
+                                (self.resolution.width - target_width) as u32
+                            } else {
+                                0
+                            }
+                        }
                     };
                     let pixel_y = match layer.position.y {
                         Position::Default => 0,
                         Position::Point(y) => y,
                         Position::Percent(y) => (y * self.resolution.height as f32) as u32,
                         Position::Center => {
-                            ((self.resolution.height as f32 / 2.0) - (target_height as f32 / 2.0))
-                                as u32
+                            if target_height < (self.resolution.height as f32 / 2.0) as usize {
+                                ((self.resolution.height as f32 / 2.0)
+                                    - (target_height as f32 / 2.0))
+                                    as u32
+                            } else {
+                                (self.resolution.height as f32 / 2.0) as u32
+                            }
                         }
-                        Position::End => (self.resolution.height - target_height) as u32,
+                        Position::End => {
+                            if target_height < self.resolution.height {
+                                (self.resolution.height - target_height) as u32
+                            } else {
+                                0
+                            }
+                        }
                     };
                     let base_index = pixel_x + (pixel_y * self.resolution.width as u32);
                     for row in 0..target_height {
