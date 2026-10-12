@@ -131,7 +131,8 @@ impl Canvas {
                             let col = target_width - col - 1;
                             let index = (row * target_width + col) as usize;
 
-                            let pixel = pixels[index];
+                            let mut pixel = pixels[index];
+                            pixel.a = (pixel.a as f32 * layer.opacity) as u8;
                             plot_pixel(col, row, pixel, Some(base_index as usize));
                         }
                     }
@@ -405,6 +406,7 @@ impl Layer {
             element,
             position: LayerPosition::default(),
             scale: 1.0,
+            opacity: 1f32,
             id,
             adjustments_stack: Vec::new(),
         }

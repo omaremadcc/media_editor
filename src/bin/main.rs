@@ -24,7 +24,8 @@ fn main() -> () {
     // small_image_layer.set_x_position_end();
     // small_image_layer.set_y_position_end();
     small_image_layer.scale_layer(5.);
-    small_image_layer.scale_layer(1.);
+    // small_image_layer.scale_layer(1.);
+    small_image_layer.opacity = 0.;
 
     let line_id = canvas.add_line(30, 500, 200, 100, 5, Colors::rose());
     let line_layer = canvas.get_mut_layer(line_id);
