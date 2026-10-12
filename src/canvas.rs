@@ -57,8 +57,6 @@ impl Canvas {
                 } else {
                     final_image.pixels[index] = pixel;
                 }
-            } else {
-                // println!("Out of bound");
             }
         };
 
@@ -336,6 +334,7 @@ pub struct Layer {
     pub element: Element,
     pub position: LayerPosition,
     pub scale: f32,
+    pub opacity: f32,
     pub adjustments_stack: Vec<Adjustment>,
 }
 

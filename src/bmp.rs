@@ -31,8 +31,7 @@ impl Bmp {
         let image_data_size = calculate_little_endian(&buffer[34..38]) as usize;
 
         let row_ideal_size = ((3 * width + 3) / 4) * 4;
-        let row_padding = (row_ideal_size - 3 * width) as usize;
-        println!("row_ideal_size: {row_ideal_size}, row_padding: {row_padding}");
+        // let row_padding = (row_ideal_size - 3 * width) as usize;
 
         let pixels = Vec::new();
         let mut no_padding_pixel_bytes = Vec::new();
@@ -112,8 +111,6 @@ impl Bmp {
         for _ in 0..16 {
             file.push(0);
         }
-
-        println!("row_ideal_size: {row_ideal_size}, row_padding: {row_padding}");
 
         for row in self.pixels.chunks_exact(width as usize) {
             // 1. Write pixel bytes for this row

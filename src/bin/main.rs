@@ -21,8 +21,8 @@ fn main() -> () {
     let small_image_id = canvas.add_image(small_image);
 
     let small_image_layer = canvas.get_mut_layer(small_image_id);
-    small_image_layer.set_x_position_end();
-    small_image_layer.set_y_position_end();
+    // small_image_layer.set_x_position_end();
+    // small_image_layer.set_y_position_end();
     small_image_layer.scale_layer(5.);
     small_image_layer.scale_layer(1.);
 

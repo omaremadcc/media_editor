@@ -176,8 +176,6 @@ impl Image {
         // Other data in the ihdr chunk
         ihdr_chunk_data.extend_from_slice(&[0, 0, 0]);
 
-        // println!("ihdr len: {}", ihdr_chunk_data.len());
-
         append_chunk(&mut file, b"IHDR", &ihdr_chunk_data);
 
         let mut idat_chunk_data = Vec::new();
@@ -195,7 +193,6 @@ impl Image {
                 }
             }
         });
-        println!("{}", idat_chunk_data.len());
 
         let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
         encoder.write_all(&idat_chunk_data)?;

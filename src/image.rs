@@ -140,8 +140,6 @@ impl Image {
             }
         }
 
-        println!("row_ideal_size: {row_ideal_size}, row_padding: {row_padding}");
-
         // Adding pixel offset
         for i in 0..4 {
             file[10 + i] = (file.len() as u32).to_le_bytes()[i];
