@@ -20,3 +20,19 @@ pub fn scaled_pixel_color(x: u32, y: u32, scale: f32) -> (u32, u32) {
 
     return (x_src as u32, y_src as u32);
 }
+
+pub fn quadratic_bezier(
+    p0: (usize, usize),
+    p1: (usize, usize),
+    p2: (usize, usize),
+    t: f32,
+) -> (usize, usize) {
+    let u = 1.0 - t;
+
+    let point = (
+        (u * u * (p0.0 as f32) + 2.0 * u * t * (p1.0 as f32) + t * t * (p2.0 as f32)),
+        (u * u * (p0.1 as f32) + 2.0 * u * t * (p1.1 as f32) + t * t * (p2.1 as f32)),
+    );
+
+    return (point.0 as usize, point.1 as usize);
+}

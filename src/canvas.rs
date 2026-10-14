@@ -1,6 +1,7 @@
+use crate::colors::Colors;
 use crate::graphic::{Graphic, GraphicType, PathCommand};
 use crate::image::Image;
-use crate::utils::scaled_pixel_color;
+use crate::utils::{quadratic_bezier, scaled_pixel_color};
 use crate::{Pixel, Resolution};
 
 pub struct Canvas {
@@ -44,12 +45,19 @@ impl Canvas {
         let empty_pixels = vec![Pixel::empty(); num_pixels];
         let mut final_image = Image::new(empty_pixels, self.resolution.clone());
 
-        let mut plot_pixel = |x: usize, y: usize, pixel: Pixel, base_index: Option<usize>| {
-            let index = base_index.unwrap_or(0) + y * self.resolution.width as usize + x;
+        fn plot_pixel(
+            x: usize,
+            y: usize,
+            pixel: Pixel,
+            base_index: Option<usize>,
+            final_image: &mut Image,
+            canvas: &Canvas,
+        ) {
+            let index = base_index.unwrap_or(0) + y * canvas.resolution.width as usize + x;
             // Make sure the pixel is not out of bounds
             if index < final_image.pixels.len()
-                && x <= self.resolution.width
-                && y <= self.resolution.height
+                && x <= canvas.resolution.width
+                && y <= canvas.resolution.height
             {
                 if pixel.a != 255 && !final_image.pixels[index].is_empty() {
                     final_image.pixels[index] = final_image.pixels[index].merge_with(&pixel);
@@ -58,8 +66,56 @@ impl Canvas {
                     final_image.pixels[index] = pixel;
                 }
             }
-        };
+        }
 
+        fn straight_line_from_to(
+            (x0, y0): (usize, usize),
+            (x1, y1): (usize, usize),
+            width: usize,
+            stroke_color: u32,
+            final_image: &mut Image,
+            canvas: &Canvas,
+        ) {
+            let (mut x0, mut y0) = (x0 as isize, y0 as isize);
+            let (x1, y1) = (x1 as isize, y1 as isize);
+
+            let dx = (x1 - x0).abs();
+            let dy = (y1 - y0).abs();
+
+            let sx = if x0 < x1 { 1 } else { -1 };
+            let sy = if y0 < y1 { 1 } else { -1 };
+
+            let mut error = dx - dy;
+
+            loop {
+                for j in 0..width {
+                    plot_pixel(
+                        (x0 + j as isize) as usize,
+                        y0 as usize,
+                        Pixel::from_hex(stroke_color),
+                        None,
+                        final_image,
+                        canvas,
+                    );
+                }
+
+                if x0 == x1 && y0 == y1 {
+                    break;
+                }
+
+                let e2 = 2 * error;
+
+                if e2 > -dy {
+                    error -= dy;
+                    x0 += sx;
+                }
+
+                if e2 < dx {
+                    error += dx;
+                    y0 += sy;
+                }
+            }
+        }
         for layer in &self.layers {
             match &layer.element {
                 Element::Image(image) => {
@@ -133,7 +189,14 @@ impl Canvas {
 
                             let mut pixel = pixels[index];
                             pixel.a = (pixel.a as f32 * layer.opacity) as u8;
-                            plot_pixel(col, row, pixel, Some(base_index as usize));
+                            plot_pixel(
+                                col,
+                                row,
+                                pixel,
+                                Some(base_index as usize),
+                                &mut final_image,
+                                &self,
+                            );
                         }
                     }
                 }
@@ -147,56 +210,16 @@ impl Canvas {
                         };
 
                         let stroke_color = graphic.stroke_color;
-
-                        let dy: isize = *y1 as isize - *y0 as isize;
-                        let dx: isize = *x1 as isize - *x0 as isize;
-
                         let width = graphic.stroke_width;
 
-                        if dx != 0 {
-                            let slope = dy as f32 / dx as f32;
-                            let mut y = *y0;
-                            for i in 0..(dx + 1) {
-                                if width > 1 {
-                                    for j in 0..width {
-                                        if dy > dx {
-                                            plot_pixel(
-                                                x0 + i as usize + j,
-                                                y,
-                                                Pixel::from_hex(stroke_color),
-                                                None,
-                                            );
-                                        } else {
-                                            plot_pixel(
-                                                x0 + i as usize,
-                                                y + j,
-                                                Pixel::from_hex(stroke_color),
-                                                None,
-                                            );
-                                        }
-                                    }
-                                } else {
-                                    plot_pixel(
-                                        // This will work because dx is always positive (we reorder the points so x0 < x1)
-                                        x0 + i as usize,
-                                        y,
-                                        Pixel::from_hex(stroke_color),
-                                        None,
-                                    );
-                                }
-
-                                let py = (slope * (i + 1) as f32 + *y0 as f32) as isize;
-                                let d0 = py - y as isize;
-                                let d1 = y as isize + 1 - py;
-                                if (d0 - d1 <= 0 && slope < 0f32) || (d0 >= d1 && slope > 0f32) {
-                                    if slope > 0f32 {
-                                        y += 1;
-                                    } else {
-                                        y -= 1;
-                                    }
-                                }
-                            }
-                        };
+                        straight_line_from_to(
+                            (*x0, *y0),
+                            (*x1, *y1),
+                            width,
+                            stroke_color,
+                            &mut final_image,
+                            &self,
+                        );
                     }
                     GraphicType::Rectangle {
                         width,
@@ -208,39 +231,59 @@ impl Canvas {
 
                         let fill_color = graphic.fill_color;
                         let (x, y) = start;
-                        for i in 0..(*width) {
-                            for j in 0..stroke_width {
-                                plot_pixel(x + i, y - j, Pixel::from_hex(stroke_color), None);
-                                plot_pixel(
-                                    x + i,
-                                    y + height + j,
-                                    Pixel::from_hex(stroke_color),
-                                    None,
-                                );
-                            }
-                        }
-                        // Added the stroke width to the height to fill the corners
-                        for i in 0..(height + (2 * stroke_width) - 1) {
-                            for j in 0..(stroke_width) {
-                                plot_pixel(
-                                    x - j,
-                                    y + i - stroke_width + 1,
-                                    Pixel::from_hex(stroke_color),
-                                    None,
-                                );
-                                plot_pixel(
-                                    x + width + j,
-                                    y + i - stroke_width + 1,
-                                    Pixel::from_hex(stroke_color),
-                                    None,
-                                );
-                            }
-                        }
+                        // Fill
                         for i in 1..(*width) {
                             for j in 1..(*height) {
-                                plot_pixel(x + i, y + j, Pixel::from_hex(fill_color), None);
+                                plot_pixel(
+                                    x + i,
+                                    y + j,
+                                    Pixel::from_hex(fill_color),
+                                    None,
+                                    &mut final_image,
+                                    &self,
+                                );
                             }
                         }
+
+                        // Top
+                        straight_line_from_to(
+                            (*x, *y),
+                            (*x + width, *y),
+                            stroke_width,
+                            stroke_color,
+                            &mut final_image,
+                            self,
+                        );
+
+                        // Bottom
+                        straight_line_from_to(
+                            (*x, *y + height),
+                            (*x + width, *y + height),
+                            stroke_width,
+                            stroke_color,
+                            &mut final_image,
+                            self,
+                        );
+
+                        // Left
+                        straight_line_from_to(
+                            (*x, *y),
+                            (*x, *y + height),
+                            stroke_width,
+                            stroke_color,
+                            &mut final_image,
+                            self,
+                        );
+
+                        // Right
+                        straight_line_from_to(
+                            (*x + width, *y),
+                            (*x + width, *y + height),
+                            stroke_width,
+                            stroke_color,
+                            &mut final_image,
+                            self,
+                        );
                     }
                     GraphicType::Path { commands, .. } => {
                         let mut current_point = (0, 0);
@@ -249,67 +292,49 @@ impl Canvas {
                                 PathCommand::MoveTo((x, y)) => {
                                     current_point = (*x, *y);
                                 }
-                                PathCommand::LineTo((x, y)) => {
+                                PathCommand::LineTo((x1, y1)) => {
+                                    let (x0, y0) = current_point;
+                                    let width = graphic.stroke_width;
+                                    let stroke_color = graphic.stroke_color;
+                                    straight_line_from_to(
+                                        (x0, y0),
+                                        (*x1, *y1),
+                                        width,
+                                        stroke_color,
+                                        &mut final_image,
+                                        &self,
+                                    );
+                                    current_point = (*x1, *y1);
+                                }
+                                PathCommand::QuadraticTo((x1, y1), (anchor_x, anchor_y)) => {
+                                    let stroke_color = graphic.stroke_color;
+                                    let width = graphic.stroke_width;
+
                                     let x0 = current_point.0;
                                     let y0 = current_point.1;
 
-                                    let x1 = *x;
-                                    let y1 = *y;
+                                    let mut last_point = (x0, y0);
 
-                                    let dy = (y1 as isize) - (y0 as isize);
-                                    let dx = (x1 as isize) - (x0 as isize);
+                                    for i in 0..=20 {
+                                        let t: f32 = (i as f32) / 20.;
+                                        let (x, y) = quadratic_bezier(
+                                            (x0, y0),
+                                            (*anchor_x, *anchor_y),
+                                            (*x1, *y1),
+                                            t,
+                                        );
 
-                                    let width = graphic.stroke_width;
-                                    let stroke_color = graphic.stroke_color;
-
-                                    if dx != 0 {
-                                        let slope = dy as f32 / dx as f32;
-                                        let mut y = y0 as usize;
-                                        for i in 0..(dx + 1) {
-                                            if width > 1 {
-                                                for j in 0..width {
-                                                    if dy > dx {
-                                                        plot_pixel(
-                                                            current_point.0 + i as usize + j,
-                                                            y,
-                                                            Pixel::from_hex(stroke_color),
-                                                            None,
-                                                        );
-                                                    } else {
-                                                        plot_pixel(
-                                                            current_point.0 + i as usize,
-                                                            y + j,
-                                                            Pixel::from_hex(stroke_color),
-                                                            None,
-                                                        );
-                                                    }
-                                                }
-                                            } else {
-                                                plot_pixel(
-                                                    // This will work because dx is always positive (we reorder the points so x0 < x1)
-                                                    current_point.0 + i as usize,
-                                                    y,
-                                                    Pixel::from_hex(graphic.stroke_color),
-                                                    None,
-                                                );
-                                            }
-                                            let py = (slope * (i + 1) as f32
-                                                + current_point.1 as f32)
-                                                as isize;
-                                            let d0 = py - y as isize;
-                                            let d1 = y as isize + 1 - py;
-                                            if (d0 - d1 <= 0 && slope < 0f32)
-                                                || (d0 >= d1 && slope > 0f32)
-                                            {
-                                                if slope > 0f32 {
-                                                    y += 1;
-                                                } else {
-                                                    y -= 1;
-                                                }
-                                            }
-                                        }
-                                    };
-                                    current_point = (*x, *y);
+                                        straight_line_from_to(
+                                            last_point,
+                                            (x, y),
+                                            width,
+                                            stroke_color,
+                                            &mut final_image,
+                                            &self,
+                                        );
+                                        last_point = (x, y);
+                                    }
+                                    current_point = (*x1, *y1);
                                 }
                                 _ => (),
                             }
