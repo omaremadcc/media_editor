@@ -17,8 +17,20 @@ pub enum GraphicType {
         height: usize,
         start: (usize, usize),
     },
-    // Circle {
-    //     radius: f32,
-    //     start: (f32, f32),
-    // },
+    Path {
+        commands: Vec<PathCommand>,
+        fill: u32,
+        stroke: u32,
+        stroke_width: usize,
+    },
+}
+
+#[derive(Debug)]
+pub enum PathCommand {
+    MoveTo((usize, usize)),
+    LineTo((usize, usize)),
+    ClosePath,
+    QuadraticTo((usize, usize), (usize, usize)),
+    CubicTo((usize, usize), (usize, usize), (usize, usize)),
+    Close,
 }

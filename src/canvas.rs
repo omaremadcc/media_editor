@@ -1,4 +1,7 @@
-use crate::graphic::{Graphic, GraphicType};
+use std::thread::current;
+
+use crate::colors::Colors;
+use crate::graphic::{Graphic, GraphicType, PathCommand};
 use crate::image::Image;
 use crate::utils::scaled_pixel_color;
 use crate::{Pixel, Resolution};
@@ -17,7 +20,7 @@ impl Canvas {
             current_layer_id: 0,
         }
     }
-    fn add_layer(&mut self, layer: Layer) {
+    pub fn add_layer(&mut self, layer: Layer) {
         self.layers.push(layer);
         self.current_layer_id += 1;
     }
@@ -137,7 +140,7 @@ impl Canvas {
                         }
                     }
                 }
-                Element::Graphic(graphic) => match graphic.graphic_type {
+                Element::Graphic(graphic) => match &graphic.graphic_type {
                     // Basic Bresenham Algorithm
                     GraphicType::Line { start, end } => {
                         let ((x0, y0), (x1, y1)) = if start.0 > end.0 {
@@ -148,14 +151,14 @@ impl Canvas {
 
                         let stroke_color = graphic.stroke_color;
 
-                        let dy: isize = y1 as isize - y0 as isize;
-                        let dx: isize = x1 as isize - x0 as isize;
+                        let dy: isize = *y1 as isize - *y0 as isize;
+                        let dx: isize = *x1 as isize - *x0 as isize;
 
                         let width = graphic.stroke_width;
 
                         if dx != 0 {
                             let slope = dy as f32 / dx as f32;
-                            let mut y = y0;
+                            let mut y = *y0;
                             for i in 0..(dx + 1) {
                                 if width > 1 {
                                     for j in 0..width {
@@ -185,7 +188,7 @@ impl Canvas {
                                     );
                                 }
 
-                                let py = (slope * (i + 1) as f32 + y0 as f32) as isize;
+                                let py = (slope * (i + 1) as f32 + *y0 as f32) as isize;
                                 let d0 = py - y as isize;
                                 let d1 = y as isize + 1 - py;
                                 if (d0 - d1 <= 0 && slope < 0f32) || (d0 >= d1 && slope > 0f32) {
@@ -208,7 +211,7 @@ impl Canvas {
 
                         let fill_color = graphic.fill_color;
                         let (x, y) = start;
-                        for i in 0..width {
+                        for i in 0..(*width) {
                             for j in 0..stroke_width {
                                 plot_pixel(x + i, y - j, Pixel::from_hex(stroke_color), None);
                                 plot_pixel(
@@ -236,9 +239,59 @@ impl Canvas {
                                 );
                             }
                         }
-                        for i in 1..width {
-                            for j in 1..height {
+                        for i in 1..(*width) {
+                            for j in 1..(*height) {
                                 plot_pixel(x + i, y + j, Pixel::from_hex(fill_color), None);
+                            }
+                        }
+                    }
+                    GraphicType::Path {
+                        commands,
+                        fill,
+                        stroke,
+                        stroke_width,
+                    } => {
+                        let mut current_point = (0, 0);
+                        for command in commands {
+                            match command {
+                                PathCommand::MoveTo((x, y)) => {
+                                    current_point = (*x, *y);
+                                }
+                                PathCommand::LineTo((x, y)) => {
+                                    let dy = (*y as isize) - (current_point.1 as isize);
+                                    let dx = (*x as isize) - (current_point.0 as isize);
+
+                                    if dx != 0 {
+                                        let slope = dy as f32 / dx as f32;
+                                        let mut y_var = current_point.1 as usize;
+                                        for i in 0..(dx + 1) {
+                                            plot_pixel(
+                                                // This will work because dx is always positive (we reorder the points so x0 < x1)
+                                                current_point.0 + i as usize,
+                                                y_var,
+                                                Pixel::from_hex(Colors::black()),
+                                                None,
+                                            );
+
+                                            let py = (slope * (i + 1) as f32
+                                                + current_point.1 as f32)
+                                                as isize;
+                                            let d0 = py - y_var as isize;
+                                            let d1 = y_var as isize + 1 - py;
+                                            if (d0 - d1 <= 0 && slope < 0f32)
+                                                || (d0 >= d1 && slope > 0f32)
+                                            {
+                                                if slope > 0f32 {
+                                                    y_var += 1;
+                                                } else {
+                                                    y_var -= 1;
+                                                }
+                                            }
+                                        }
+                                    };
+                                    current_point = (*x, *y);
+                                }
+                                _ => (),
                             }
                         }
                     }
@@ -463,6 +516,9 @@ impl Element {
                 }
                 GraphicType::Rectangle { .. } => {
                     println!("Rectangle");
+                }
+                GraphicType::Path { .. } => {
+                    println!("Path")
                 }
             },
         }
