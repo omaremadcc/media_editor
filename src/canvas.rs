@@ -1,6 +1,3 @@
-use std::thread::current;
-
-use crate::colors::Colors;
 use crate::graphic::{Graphic, GraphicType, PathCommand};
 use crate::image::Image;
 use crate::utils::scaled_pixel_color;
@@ -245,12 +242,7 @@ impl Canvas {
                             }
                         }
                     }
-                    GraphicType::Path {
-                        commands,
-                        fill,
-                        stroke,
-                        stroke_width,
-                    } => {
+                    GraphicType::Path { commands, .. } => {
                         let mut current_point = (0, 0);
                         for command in commands {
                             match command {
@@ -258,33 +250,61 @@ impl Canvas {
                                     current_point = (*x, *y);
                                 }
                                 PathCommand::LineTo((x, y)) => {
-                                    let dy = (*y as isize) - (current_point.1 as isize);
-                                    let dx = (*x as isize) - (current_point.0 as isize);
+                                    let x0 = current_point.0;
+                                    let y0 = current_point.1;
+
+                                    let x1 = *x;
+                                    let y1 = *y;
+
+                                    let dy = (y1 as isize) - (y0 as isize);
+                                    let dx = (x1 as isize) - (x0 as isize);
+
+                                    let width = graphic.stroke_width;
+                                    let stroke_color = graphic.stroke_color;
 
                                     if dx != 0 {
                                         let slope = dy as f32 / dx as f32;
-                                        let mut y_var = current_point.1 as usize;
+                                        let mut y = y0 as usize;
                                         for i in 0..(dx + 1) {
-                                            plot_pixel(
-                                                // This will work because dx is always positive (we reorder the points so x0 < x1)
-                                                current_point.0 + i as usize,
-                                                y_var,
-                                                Pixel::from_hex(Colors::black()),
-                                                None,
-                                            );
-
+                                            if width > 1 {
+                                                for j in 0..width {
+                                                    if dy > dx {
+                                                        plot_pixel(
+                                                            current_point.0 + i as usize + j,
+                                                            y,
+                                                            Pixel::from_hex(stroke_color),
+                                                            None,
+                                                        );
+                                                    } else {
+                                                        plot_pixel(
+                                                            current_point.0 + i as usize,
+                                                            y + j,
+                                                            Pixel::from_hex(stroke_color),
+                                                            None,
+                                                        );
+                                                    }
+                                                }
+                                            } else {
+                                                plot_pixel(
+                                                    // This will work because dx is always positive (we reorder the points so x0 < x1)
+                                                    current_point.0 + i as usize,
+                                                    y,
+                                                    Pixel::from_hex(graphic.stroke_color),
+                                                    None,
+                                                );
+                                            }
                                             let py = (slope * (i + 1) as f32
                                                 + current_point.1 as f32)
                                                 as isize;
-                                            let d0 = py - y_var as isize;
-                                            let d1 = y_var as isize + 1 - py;
+                                            let d0 = py - y as isize;
+                                            let d1 = y as isize + 1 - py;
                                             if (d0 - d1 <= 0 && slope < 0f32)
                                                 || (d0 >= d1 && slope > 0f32)
                                             {
                                                 if slope > 0f32 {
-                                                    y_var += 1;
+                                                    y += 1;
                                                 } else {
-                                                    y_var -= 1;
+                                                    y -= 1;
                                                 }
                                             }
                                         }

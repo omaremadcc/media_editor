@@ -19,9 +19,6 @@ pub enum GraphicType {
     },
     Path {
         commands: Vec<PathCommand>,
-        fill: u32,
-        stroke: u32,
-        stroke_width: usize,
     },
 }
 
