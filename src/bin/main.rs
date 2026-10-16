@@ -5,7 +5,7 @@ use images_editor::{
     colors::Colors,
     graphic::{
         Graphic, GraphicType,
-        PathCommand::{LineTo, MoveTo, QuadraticTo},
+        PathCommand::{CubicTo, LineTo, MoveTo, QuadraticTo},
     },
     image::Image,
     utils::calculate_little_endian,
@@ -52,9 +52,15 @@ fn main() -> () {
     let graphic = Graphic {
         graphic_type: GraphicType::Path {
             commands: vec![
+                // 1. Start the path at X: 200, Y: 300
                 MoveTo((200, 300)),
-                QuadraticTo((300, 400), (390, 700)),
-                LineTo((400, 300)),
+                // 2. Cubic Bézier curve pulling toward two separate control anchors:
+                // First Control Anchor:  (300, 100)  <- Pulls the start upward
+                // Second Control Anchor: (500, 600)  <- Pulls the curve downward before the end
+                // End Destination Point: (600, 300)
+                CubicTo((300, 100), (500, 600), (600, 300)),
+                // 3. Continue with your straight lines across the 800x800 space
+                LineTo((400, 500)),
                 LineTo((700, 500)),
             ],
         },

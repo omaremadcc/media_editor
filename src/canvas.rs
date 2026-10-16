@@ -1,7 +1,6 @@
-use crate::colors::Colors;
 use crate::graphic::{Graphic, GraphicType, PathCommand};
 use crate::image::Image;
-use crate::utils::{distance_between_point_and_line, quadratic_bezier, scaled_pixel_color};
+use crate::utils::{distance_between_point_and_line, scaled_pixel_color};
 use crate::{Pixel, Resolution};
 
 pub struct Canvas {
@@ -399,8 +398,120 @@ impl Canvas {
                                         &mut final_image,
                                         &self,
                                     );
+                                    current_point = (*x1, *y1);
                                 }
+                                PathCommand::CubicTo((x1, y1), (ax1, ay1), (ax2, ay2)) => {
+                                    let stroke_color = graphic.stroke_color;
+                                    let width = graphic.stroke_width;
 
+                                    let x0 = current_point.0;
+                                    let y0 = current_point.1;
+
+                                    fn recure(
+                                        x0: f32,
+                                        y0: f32,
+                                        ax1: f32,
+                                        ay1: f32,
+                                        ax2: f32,
+                                        ay2: f32,
+                                        x1: f32,
+                                        y1: f32,
+                                        depth: u32,
+                                        width: usize,
+                                        stroke_color: u32,
+                                        image: &mut Image,
+                                        canvas: &Canvas,
+                                    ) {
+                                        let distance_1 = distance_between_point_and_line(
+                                            (ax1, ay1),
+                                            (x0, y0),
+                                            (x1, y1),
+                                        );
+                                        let distance_2 = distance_between_point_and_line(
+                                            (ax2, ay2),
+                                            (x0, y0),
+                                            (x1, y1),
+                                        );
+
+                                        if (distance_1 < 0.01 && distance_2 < 0.01) || depth == 16 {
+                                            straight_line_from_to(
+                                                (x0 as usize, y0 as usize),
+                                                (x1 as usize, y1 as usize),
+                                                width,
+                                                stroke_color,
+                                                image,
+                                                canvas,
+                                            );
+                                            return;
+                                        }
+                                        let midpoint_a = ((x0 + ax1) / 2.0, (y0 + ay1) / 2.0);
+                                        let midpoint_b = ((ax1 + ax2) / 2.0, (ay1 + ay2) / 2.0);
+                                        let midpoint_c = ((ax2 + x1) / 2.0, (ay2 + y1) / 2.0);
+
+                                        let midpoint_ab = (
+                                            (midpoint_a.0 + midpoint_b.0) / 2.0,
+                                            (midpoint_a.1 + midpoint_b.1) / 2.0,
+                                        );
+                                        let midpoint_bc = (
+                                            (midpoint_b.0 + midpoint_c.0) / 2.0,
+                                            (midpoint_b.1 + midpoint_c.1) / 2.0,
+                                        );
+
+                                        let midpoint_abc = (
+                                            (midpoint_ab.0 + midpoint_bc.0) / 2.0,
+                                            (midpoint_ab.1 + midpoint_bc.1) / 2.0,
+                                        );
+
+                                        recure(
+                                            x0,
+                                            y0,
+                                            midpoint_a.0,
+                                            midpoint_a.1,
+                                            midpoint_ab.0,
+                                            midpoint_ab.1,
+                                            midpoint_abc.0,
+                                            midpoint_abc.1,
+                                            depth + 1,
+                                            width,
+                                            stroke_color,
+                                            image,
+                                            canvas,
+                                        );
+                                        recure(
+                                            midpoint_abc.0,
+                                            midpoint_abc.1,
+                                            midpoint_bc.0,
+                                            midpoint_bc.1,
+                                            midpoint_c.0,
+                                            midpoint_c.1,
+                                            x1,
+                                            y1,
+                                            depth + 1,
+                                            width,
+                                            stroke_color,
+                                            image,
+                                            canvas,
+                                        );
+                                    }
+
+                                    recure(
+                                        x0 as f32,
+                                        y0 as f32,
+                                        *ax1 as f32,
+                                        *ay1 as f32,
+                                        *ax2 as f32,
+                                        *ay2 as f32,
+                                        *x1 as f32,
+                                        *y1 as f32,
+                                        0,
+                                        width,
+                                        stroke_color,
+                                        &mut final_image,
+                                        &self,
+                                    );
+
+                                    current_point = (*x1, *y1);
+                                }
                                 _ => (),
                             }
                         }
