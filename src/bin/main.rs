@@ -58,7 +58,7 @@ fn main() -> () {
                 LineTo((700, 500)),
             ],
         },
-        stroke_width: 10,
+        stroke_width: 2,
         stroke_color: Colors::rose(),
         fill_color: Colors::blue(),
     };

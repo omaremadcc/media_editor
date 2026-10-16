@@ -36,3 +36,40 @@ pub fn quadratic_bezier(
 
     return (point.0 as usize, point.1 as usize);
 }
+
+pub fn distance_between_points(p1: (usize, usize), p2: (usize, usize)) -> f32 {
+    let dx = p2.0 as f32 - p1.0 as f32;
+    let dy = p2.1 as f32 - p1.1 as f32;
+
+    return (dx * dx + dy * dy).sqrt();
+}
+pub fn distance_between_point_and_line(
+    point: (f32, f32),
+    line_start: (f32, f32),
+    line_end: (f32, f32),
+) -> f32 {
+    let x0 = point.0;
+    let y0 = point.1;
+    let x1 = line_start.0;
+    let y1 = line_start.1;
+    let x2 = line_end.0;
+    let y2 = line_end.1;
+
+    let numerator = ((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1).abs();
+    let denominator = ((y2 - y1).powi(2) + (x2 - x1).powi(2)).sqrt();
+
+    numerator / denominator
+}
+
+pub fn distance_between_point_and_line_mid_point(
+    point: (usize, usize),
+    line_start: (usize, usize),
+    line_end: (usize, usize),
+) -> f32 {
+    let line_mid_point = (
+        (line_start.0 + line_end.0) / 2,
+        (line_start.1 + line_end.1) / 2,
+    );
+
+    return distance_between_points(point, line_mid_point);
+}
