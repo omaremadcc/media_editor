@@ -53,6 +53,9 @@ impl Canvas {
             final_image: &mut Image,
             canvas: &Canvas,
         ) {
+            if y > canvas.resolution.height as usize || x > canvas.resolution.width as usize {
+                return;
+            }
             let index = base_index.unwrap_or(0) + y * canvas.resolution.width as usize + x;
             // Make sure the pixel is not out of bounds
             if index < final_image.pixels.len()
@@ -287,33 +290,21 @@ impl Canvas {
                         );
                     }
                     GraphicType::Path { commands, .. } => {
+                        let mut edges: Vec<((f32, f32), (f32, f32))> = vec![];
                         let mut current_point = (0f32, 0f32);
                         let mut most_recent_move = (0f32, 0f32);
                         for command in commands {
                             match command {
-                                PathCommand::MoveTo((x, y)) => {
-                                    most_recent_move = (*x, *y);
-                                    current_point = (*x, *y);
+                                PathCommand::MoveTo(point) => {
+                                    most_recent_move = *point;
+                                    current_point = *point;
                                 }
-                                PathCommand::LineTo((x1, y1)) => {
-                                    let (x0, y0) = current_point;
-                                    let width = graphic.stroke_width;
-                                    let stroke_color = graphic.stroke_color;
-                                    straight_line_from_to(
-                                        (x0 as usize, y0 as usize),
-                                        (*x1 as usize, *y1 as usize),
-                                        width,
-                                        stroke_color,
-                                        &mut final_image,
-                                        &self,
-                                    );
-                                    current_point = (*x1, *y1);
+                                PathCommand::LineTo(point) => {
+                                    edges.push((current_point, *point));
+                                    current_point = *point;
                                 }
                                 // De Casteljau's algorithm
                                 PathCommand::QuadraticTo((x1, y1), (anchor_x, anchor_y)) => {
-                                    let stroke_color = graphic.stroke_color;
-                                    let width = graphic.stroke_width;
-
                                     let x0 = current_point.0;
                                     let y0 = current_point.1;
 
@@ -325,10 +316,7 @@ impl Canvas {
                                         x1: f32,
                                         y1: f32,
                                         depth: u32,
-                                        width: usize,
-                                        stroke_color: u32,
-                                        final_image: &mut Image,
-                                        canvas: &Canvas,
+                                        edges: &mut Vec<((f32, f32), (f32, f32))>,
                                     ) {
                                         let distance_between_anchor_and_line =
                                             distance_between_point_and_line(
@@ -337,14 +325,7 @@ impl Canvas {
                                                 (x1, y1),
                                             );
                                         if distance_between_anchor_and_line < 0.5 || depth == 16 {
-                                            straight_line_from_to(
-                                                (x0 as usize, y0 as usize),
-                                                (x1 as usize, y1 as usize),
-                                                width,
-                                                stroke_color,
-                                                final_image,
-                                                canvas,
-                                            );
+                                            edges.push(((x0, y0), (x1, y1)));
                                             return;
                                         }
                                         let first_segment_mid_point =
@@ -368,10 +349,7 @@ impl Canvas {
                                             mid_point.0,
                                             mid_point.1,
                                             depth + 1,
-                                            width,
-                                            stroke_color,
-                                            final_image,
-                                            canvas,
+                                            edges,
                                         );
                                         recure(
                                             mid_point.0,
@@ -381,10 +359,7 @@ impl Canvas {
                                             x1,
                                             y1,
                                             depth + 1,
-                                            width,
-                                            stroke_color,
-                                            final_image,
-                                            canvas,
+                                            edges,
                                         );
                                     }
 
@@ -396,17 +371,11 @@ impl Canvas {
                                         *x1 as f32,
                                         *y1 as f32,
                                         0,
-                                        width,
-                                        stroke_color,
-                                        &mut final_image,
-                                        &self,
+                                        &mut edges,
                                     );
                                     current_point = (*x1, *y1);
                                 }
                                 PathCommand::CubicTo((x1, y1), (ax1, ay1), (ax2, ay2)) => {
-                                    let stroke_color = graphic.stroke_color;
-                                    let width = graphic.stroke_width;
-
                                     let x0 = current_point.0;
                                     let y0 = current_point.1;
 
@@ -420,10 +389,7 @@ impl Canvas {
                                         x1: f32,
                                         y1: f32,
                                         depth: u32,
-                                        width: usize,
-                                        stroke_color: u32,
-                                        image: &mut Image,
-                                        canvas: &Canvas,
+                                        edges: &mut Vec<((f32, f32), (f32, f32))>,
                                     ) {
                                         let distance_1 = distance_between_point_and_line(
                                             (ax1, ay1),
@@ -437,14 +403,7 @@ impl Canvas {
                                         );
 
                                         if (distance_1 < 0.01 && distance_2 < 0.01) || depth == 16 {
-                                            straight_line_from_to(
-                                                (x0 as usize, y0 as usize),
-                                                (x1 as usize, y1 as usize),
-                                                width,
-                                                stroke_color,
-                                                image,
-                                                canvas,
-                                            );
+                                            edges.push(((x0, y0), (x1, y1)));
                                             return;
                                         }
                                         let midpoint_a = ((x0 + ax1) / 2.0, (y0 + ay1) / 2.0);
@@ -475,10 +434,7 @@ impl Canvas {
                                             midpoint_abc.0,
                                             midpoint_abc.1,
                                             depth + 1,
-                                            width,
-                                            stroke_color,
-                                            image,
-                                            canvas,
+                                            edges,
                                         );
                                         recure(
                                             midpoint_abc.0,
@@ -490,10 +446,7 @@ impl Canvas {
                                             x1,
                                             y1,
                                             depth + 1,
-                                            width,
-                                            stroke_color,
-                                            image,
-                                            canvas,
+                                            edges,
                                         );
                                     }
 
@@ -507,27 +460,81 @@ impl Canvas {
                                         *x1 as f32,
                                         *y1 as f32,
                                         0,
-                                        width,
-                                        stroke_color,
-                                        &mut final_image,
-                                        &self,
+                                        &mut edges,
                                     );
 
                                     current_point = (*x1, *y1);
                                 }
                                 PathCommand::Close => {
-                                    let width = graphic.stroke_width;
-                                    let stroke_color = graphic.stroke_color;
-                                    straight_line_from_to(
-                                        (current_point.0 as usize, current_point.1 as usize),
-                                        (most_recent_move.0 as usize, most_recent_move.1 as usize),
-                                        width,
-                                        stroke_color,
+                                    edges.push((current_point, most_recent_move));
+                                    current_point = most_recent_move;
+                                }
+                            }
+                        }
+
+                        let min_y = edges
+                            .iter()
+                            .flat_map(|&(p0, p1)| [p0.1, p1.1])
+                            .fold(f32::INFINITY, f32::min)
+                            .floor() as i32;
+
+                        let max_y = edges
+                            .iter()
+                            .flat_map(|&(p0, p1)| [p0.1, p1.1])
+                            .fold(f32::NEG_INFINITY, f32::max)
+                            .ceil() as i32;
+
+                        let mut intersections = vec![];
+
+                        for y in min_y..max_y {
+                            let scan_y = y as f32 + 0.5;
+
+                            intersections.clear();
+
+                            for &((x0, y0), (x1, y1)) in &edges {
+                                if y0 == y1 {
+                                    continue;
+                                }
+
+                                let edge_min_y = y0.min(y1);
+                                let edge_max_y = y0.max(y1);
+
+                                if edge_min_y <= scan_y && scan_y <= edge_max_y {
+                                    let t = (scan_y - y0) / (y1 - y0);
+                                    let x = x0 + t * (x1 - x0);
+                                    intersections.push(x);
+                                }
+                            }
+                            intersections.sort_by(|a, b| a.total_cmp(b));
+                            for pair in intersections.chunks_exact(2) {
+                                let left = pair[0];
+                                let right = pair[1];
+
+                                let start_x = (left - 0.5).ceil() as i32;
+                                let end_x = (right - 0.5).ceil() as i32;
+
+                                for x in start_x..end_x {
+                                    plot_pixel(
+                                        x as usize,
+                                        y as usize,
+                                        Pixel::from_hex(graphic.fill_color),
+                                        None,
                                         &mut final_image,
                                         &self,
                                     );
                                 }
                             }
+                        }
+
+                        for edge in edges {
+                            straight_line_from_to(
+                                (edge.0.0 as usize, edge.0.1 as usize),
+                                (edge.1.0 as usize, edge.1.1 as usize),
+                                graphic.stroke_width,
+                                graphic.stroke_color,
+                                &mut final_image,
+                                &self,
+                            );
                         }
                     }
                 },

@@ -594,7 +594,6 @@ pub fn svg_to_path(data: &str) -> Result<Vec<PathCommand>, String> {
         }
     }
     let height = max_y + min_y;
-    println!("min_x: {}, min_y: {}, height: {}", min_x, min_y, height);
     let mut path_commands_flipped = vec![];
     let scale = 1.0;
     let translate_x = -min_x;
