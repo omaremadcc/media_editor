@@ -1,5 +1,6 @@
 use crate::graphic::{Graphic, GraphicType, PathCommand};
 use crate::image::Image;
+use crate::svg::svg_to_path;
 use crate::utils::{distance_between_point_and_line, scaled_pixel_color};
 use crate::{Pixel, Resolution};
 
@@ -286,10 +287,12 @@ impl Canvas {
                         );
                     }
                     GraphicType::Path { commands, .. } => {
-                        let mut current_point = (0, 0);
+                        let mut current_point = (0f32, 0f32);
+                        let mut most_recent_move = (0f32, 0f32);
                         for command in commands {
                             match command {
                                 PathCommand::MoveTo((x, y)) => {
+                                    most_recent_move = (*x, *y);
                                     current_point = (*x, *y);
                                 }
                                 PathCommand::LineTo((x1, y1)) => {
@@ -297,8 +300,8 @@ impl Canvas {
                                     let width = graphic.stroke_width;
                                     let stroke_color = graphic.stroke_color;
                                     straight_line_from_to(
-                                        (x0, y0),
-                                        (*x1, *y1),
+                                        (x0 as usize, y0 as usize),
+                                        (*x1 as usize, *y1 as usize),
                                         width,
                                         stroke_color,
                                         &mut final_image,
@@ -512,7 +515,18 @@ impl Canvas {
 
                                     current_point = (*x1, *y1);
                                 }
-                                _ => (),
+                                PathCommand::Close => {
+                                    let width = graphic.stroke_width;
+                                    let stroke_color = graphic.stroke_color;
+                                    straight_line_from_to(
+                                        (current_point.0 as usize, current_point.1 as usize),
+                                        (most_recent_move.0 as usize, most_recent_move.1 as usize),
+                                        width,
+                                        stroke_color,
+                                        &mut final_image,
+                                        &self,
+                                    );
+                                }
                             }
                         }
                     }
@@ -566,6 +580,27 @@ impl Canvas {
         });
         self.add_layer(Layer::from_element(element, self.current_layer_id));
         return self.current_layer_id - 1;
+    }
+
+    pub fn add_svg_path(
+        &mut self,
+        path: &str,
+        stroke_width: usize,
+        stroke_color: u32,
+        fill_color: u32,
+    ) {
+        let commands = svg_to_path(path).unwrap();
+        let layer = Layer::from_element(
+            Element::Graphic(Graphic {
+                graphic_type: GraphicType::Path { commands },
+                stroke_width,
+                stroke_color,
+                fill_color,
+            }),
+            self.current_layer_id,
+        );
+        self.current_layer_id += 1;
+        self.add_layer(layer)
     }
 
     pub fn bring_layer_to_front(&mut self, layer_id: usize) {

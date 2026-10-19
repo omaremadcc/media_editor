@@ -24,10 +24,9 @@ pub enum GraphicType {
 
 #[derive(Debug)]
 pub enum PathCommand {
-    MoveTo((usize, usize)),
-    LineTo((usize, usize)),
-    ClosePath,
-    QuadraticTo((usize, usize), (usize, usize)),
-    CubicTo((usize, usize), (usize, usize), (usize, usize)),
+    MoveTo((f32, f32)),
+    LineTo((f32, f32)),
+    QuadraticTo((f32, f32), (f32, f32)),
+    CubicTo((f32, f32), (f32, f32), (f32, f32)),
     Close,
 }
