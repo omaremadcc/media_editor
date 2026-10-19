@@ -14,6 +14,7 @@ pub struct SeparatorCounts {
     implicit: usize,
 }
 
+// THIS FUNCTION WAS WRITTING BY AI
 fn is_command(c: u8) -> bool {
     matches!(
         c as char,
@@ -39,10 +40,12 @@ fn is_command(c: u8) -> bool {
     )
 }
 
+// THIS FUNCTION WAS WRITTING BY AI
 fn is_number_start(c: u8) -> bool {
     c.is_ascii_digit() || c == b'+' || c == b'-' || c == b'.'
 }
 
+// THIS FUNCTION WAS WRITTING BY AI
 fn parse_number(bytes: &[u8], i: &mut usize) -> Result<f64, String> {
     let start = *i;
     let len = bytes.len();
@@ -95,6 +98,7 @@ fn parse_number(bytes: &[u8], i: &mut usize) -> Result<f64, String> {
         .map_err(|e| format!("Invalid number '{text}': {e}"))
 }
 
+// THIS FUNCTION WAS WRITTING BY AI
 pub fn parse_svg_path(data: &str) -> Result<(Vec<PathCommandRaw>, SeparatorCounts), String> {
     let bytes = data.as_bytes();
     let mut i = 000;
