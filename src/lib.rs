@@ -6,6 +6,7 @@ pub mod image;
 pub mod png;
 pub mod resolutions;
 pub mod svg;
+pub mod text;
 pub mod utils;
 
 #[derive(Debug, Clone, Copy)]

@@ -306,6 +306,32 @@ impl Canvas {
         self.add_layer(layer)
     }
 
+    pub fn add_text(
+        &mut self,
+        text: String,
+        size: usize,
+        stroke_width: usize,
+        stroke_color: u32,
+        fill_color: u32,
+    ) -> usize {
+        let layer = Layer {
+            id: self.current_layer_id,
+            scale: 1.,
+            opacity: 1.,
+            position: LayerPosition::default(),
+            adjustments_stack: Vec::new(),
+            element: Element::Graphic(Graphic {
+                graphic_type: GraphicType::Text { size, text },
+                stroke_width,
+                stroke_color,
+                fill_color,
+            }),
+        };
+        self.current_layer_id += 1;
+        self.add_layer(layer);
+        return self.current_layer_id - 1;
+    }
+
     pub fn bring_layer_to_front(&mut self, layer_id: usize) {
         if let Some(index) = self.layers.iter().position(|layer| layer.id == layer_id) {
             let layer = self.layers.remove(index);
@@ -478,6 +504,9 @@ impl Element {
                 }
                 GraphicType::Path { .. } => {
                     println!("Path")
+                }
+                GraphicType::Text { .. } => {
+                    println!("Text")
                 }
             },
         }
