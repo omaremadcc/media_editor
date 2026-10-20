@@ -298,71 +298,18 @@ impl GraphicType {
                         }
                     }
                 }
-
-                let min_y = edges
-                    .iter()
-                    .flat_map(|&(p0, p1)| [p0.1, p1.1])
-                    .fold(f32::INFINITY, f32::min)
-                    .floor() as i32;
-
-                let max_y = edges
-                    .iter()
-                    .flat_map(|&(p0, p1)| [p0.1, p1.1])
-                    .fold(f32::NEG_INFINITY, f32::max)
-                    .ceil() as i32;
-
-                let mut intersections = vec![];
-
-                for y in min_y..max_y {
-                    let scan_y = y as f32 + 0.5;
-
-                    intersections.clear();
-
-                    for &((x0, y0), (x1, y1)) in &edges {
-                        if y0 == y1 {
-                            continue;
-                        }
-
-                        let edge_min_y = y0.min(y1);
-                        let edge_max_y = y0.max(y1);
-
-                        if edge_min_y <= scan_y && scan_y <= edge_max_y {
-                            let t = (scan_y - y0) / (y1 - y0);
-                            let x = x0 + t * (x1 - x0);
-                            intersections.push(x);
-                        }
-                    }
-                    intersections.sort_by(|a, b| a.total_cmp(b));
-                    for pair in intersections.chunks_exact(2) {
-                        let left = pair[0];
-                        let right = pair[1];
-
-                        let start_x = (left - 0.5).ceil() as i32;
-                        let end_x = (right - 0.5).ceil() as i32;
-
-                        for x in start_x..end_x {
-                            plot_pixel(
-                                x as usize,
-                                y as usize,
-                                Pixel::from_hex(fill_color),
-                                None,
-                                &mut final_image,
-                                resolution,
-                            );
-                        }
-                    }
-                }
-
-                for edge in edges {
-                    straight_line_from_to(
-                        (edge.0.0 as usize, edge.0.1 as usize),
-                        (edge.1.0 as usize, edge.1.1 as usize),
-                        width,
-                        stroke_color,
-                        &mut final_image,
-                        resolution,
-                    );
-                }
+                render_edges(
+                    edges,
+                    width,
+                    stroke_color,
+                    fill_color,
+                    position,
+                    scale,
+                    final_image,
+                    resolution,
+                    straight_line_from_to,
+                    plot_pixel,
+                );
             }
             GraphicType::Text { size, text } => {
                 let font_data = std::fs::read("mono.ttf").unwrap();

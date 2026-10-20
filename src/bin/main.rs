@@ -27,6 +27,8 @@ fn main() -> () {
 				"
     );
     let layer_id = canvas.add_svg_path(&svg_path, 1, Colors::white(), Colors::yellow());
+    let layer = canvas.get_mut_layer(layer_id);
+    // layer.position.x = Position::End;
 
     let text_layer_id = canvas.add_text(
         String::from("omar\nemad"),
