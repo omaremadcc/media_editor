@@ -71,6 +71,7 @@ impl Canvas {
             }
         }
 
+        // THIS FUNCTION WAS WRITTEN BY AI
         fn straight_line_from_to(
             (x0, y0): (usize, usize),
             (x1, y1): (usize, usize),
@@ -79,6 +80,10 @@ impl Canvas {
             final_image: &mut Image,
             canvas: &Canvas,
         ) {
+            if width == 0 {
+                return;
+            }
+
             let (mut x0, mut y0) = (x0 as isize, y0 as isize);
             let (x1, y1) = (x1 as isize, y1 as isize);
 
@@ -90,16 +95,32 @@ impl Canvas {
 
             let mut error = dx - dy;
 
+            // Use a disk of radius width / 2 to create a continuous stroke.
+            let radius = width as f64 / 2.0;
+            let radius_squared = radius * radius;
+
             loop {
-                for j in 0..width {
-                    plot_pixel(
-                        (x0 + j as isize) as usize,
-                        y0 as usize,
-                        Pixel::from_hex(stroke_color),
-                        None,
-                        final_image,
-                        canvas,
-                    );
+                let min_x = (x0 - radius.ceil() as isize).max(0);
+                let min_y = (y0 - radius.ceil() as isize).max(0);
+                let max_x = x0 + radius.ceil() as isize;
+                let max_y = y0 + radius.ceil() as isize;
+
+                for py in min_y..=max_y {
+                    for px in min_x..=max_x {
+                        let ddx = px as f64 - x0 as f64;
+                        let ddy = py as f64 - y0 as f64;
+
+                        if ddx * ddx + ddy * ddy <= radius_squared {
+                            plot_pixel(
+                                px as usize,
+                                py as usize,
+                                Pixel::from_hex(stroke_color),
+                                None,
+                                final_image,
+                                canvas,
+                            );
+                        }
+                    }
                 }
 
                 if x0 == x1 && y0 == y1 {
