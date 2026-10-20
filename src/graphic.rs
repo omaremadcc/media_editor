@@ -26,6 +26,7 @@ pub enum GraphicType {
     },
 }
 
+use crate::canvas::LayerPosition;
 use crate::image::Image;
 use crate::text::GlyphPath;
 use crate::utils::distance_between_point_and_line;
@@ -40,6 +41,8 @@ impl GraphicType {
         width: usize,
         stroke_color: u32,
         fill_color: u32,
+        position: &LayerPosition,
+        scale: f32,
         mut final_image: &mut Image,
         resolution: &Resolution,
         straight_line_from_to: StraightLineFromToFn,
@@ -363,34 +366,49 @@ impl GraphicType {
             }
             GraphicType::Text { size, text } => {
                 let font_data = std::fs::read("mono.ttf").unwrap();
+                let mut line_height = 0f32;
                 let mut current_x = 0f32;
+                let mut current_y = 0f32;
+                let mut edges = Vec::new();
                 for char in text.chars() {
+                    if char == '\n' {
+                        current_x = 0f32;
+                        current_y += line_height;
+                        continue;
+                    }
                     let (path, hor_advance, units_per_em) =
                         extract_glyph(&font_data, char).unwrap();
 
-                    let scale = (*size as f32 / units_per_em) as f32;
-                    let edges = path_to_edges(path.commands);
-                    let edges = edges
+                    let text_scale = (*size as f32 / units_per_em) as f32;
+                    line_height = *size as f32 * 0.75;
+
+                    let edges_inner = path_to_edges(path.commands);
+                    let edges_inner: Vec<((f32, f32), (f32, f32))> = edges_inner
                         .iter()
                         .map(|((x, y), (x1, y1))| {
                             return (
-                                ((x + current_x) * scale, y * scale),
-                                ((x1 + current_x) * scale, y1 * scale),
+                                ((x + current_x) * text_scale, (y * text_scale) - current_y),
+                                ((x1 + current_x) * text_scale, (y1 * text_scale) - current_y),
                             );
                         })
                         .collect();
-                    render_edges(
-                        edges,
-                        width,
-                        stroke_color,
-                        fill_color,
-                        final_image,
-                        resolution,
-                        straight_line_from_to,
-                        plot_pixel,
-                    );
+
+                    edges.extend(edges_inner);
+
                     current_x += hor_advance;
                 }
+                render_edges(
+                    edges,
+                    width,
+                    stroke_color,
+                    fill_color,
+                    position,
+                    scale,
+                    final_image,
+                    resolution,
+                    straight_line_from_to,
+                    plot_pixel,
+                );
             }
         }
     }
@@ -559,9 +577,11 @@ pub fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))
 
 pub fn render_edges(
     edges: Vec<((f32, f32), (f32, f32))>,
-    width: usize,
+    stroke_width: usize,
     stroke_color: u32,
     fill_color: u32,
+    position: &LayerPosition,
+    scale: f32,
     mut final_image: &mut Image,
     resolution: &Resolution,
     straight_line_from_to: StraightLineFromToFn,
@@ -571,17 +591,56 @@ pub fn render_edges(
         .iter()
         .flat_map(|&(p0, p1)| [p0.1, p1.1])
         .fold(f32::INFINITY, f32::min)
-        .floor() as i32;
+        .floor()
+        * scale;
 
     let max_y = edges
         .iter()
         .flat_map(|&(p0, p1)| [p0.1, p1.1])
         .fold(f32::NEG_INFINITY, f32::max)
-        .ceil() as i32;
+        .ceil()
+        * scale;
+
+    let max_x = edges
+        .iter()
+        .flat_map(|&(p0, p1)| [p0.0, p1.0])
+        .fold(f32::NEG_INFINITY, f32::max)
+        .ceil()
+        * scale;
+
+    let min_x = edges
+        .iter()
+        .flat_map(|&(p0, p1)| [p0.0, p1.0])
+        .fold(f32::INFINITY, f32::min)
+        .floor()
+        * scale;
+
+    let width = max_x - min_x;
+    let height = max_y - min_y;
+
+    let (pixel_x, pixel_y) = position.to_translation(width, height, resolution);
+
+    let translate_x = pixel_x - (min_x);
+    let translate_y = pixel_y - (min_y);
 
     let mut intersections = vec![];
 
-    for y in min_y..max_y {
+    let transform_point = |(x, y): (f32, f32)| {
+        let x = x as f32 * scale + translate_x;
+        let y = y as f32 * scale + translate_y;
+        (x, y)
+    };
+
+    let edges: Vec<((f32, f32), (f32, f32))> = edges
+        .iter()
+        .map(|((x0, y0), (x1, y1)): &((f32, f32), (f32, f32))| {
+            let (x0, y0) = transform_point((*x0, *y0));
+            let (x1, y1) = transform_point((*x1, *y1));
+            ((x0, y0), (x1, y1))
+        })
+        .collect();
+
+    for y in (min_y as i32 + translate_y as i32)..(max_y as i32 + translate_y as i32) {
         let scan_y = y as f32 + 0.5;
 
         intersections.clear();
@@ -625,7 +684,7 @@ pub fn render_edges(
         straight_line_from_to(
             (edge.0.0 as usize, edge.0.1 as usize),
             (edge.1.0 as usize, edge.1.1 as usize),
-            width,
+            stroke_width as usize,
             stroke_color,
             &mut final_image,
             resolution,

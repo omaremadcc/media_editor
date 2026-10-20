@@ -26,15 +26,18 @@ fn main() -> () {
         M3 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H3zm0-2h14a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V3a3 3 0 0 1 3-3z
 				"
     );
-    let layer_id = canvas.add_svg_path(&svg_path, 10, Colors::white(), Colors::yellow());
+    let layer_id = canvas.add_svg_path(&svg_path, 1, Colors::white(), Colors::yellow());
 
-    let layer_id = canvas.add_text(
-        String::from("omar emad"),
-        400,
+    let text_layer_id = canvas.add_text(
+        String::from("omar\nemad"),
+        50,
         1,
         Colors::green(),
         Colors::orange(),
     );
+
+    let text_layer = canvas.get_mut_layer(text_layer_id);
+    text_layer.position.y = Position::End;
 
     let res = canvas.to_image();
     res.write_to_png("output15.png", true);

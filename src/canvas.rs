@@ -33,7 +33,7 @@ impl Canvas {
             Element::Image(image),
             self.current_layer_id,
         ));
-        return self.layers.len() - 1;
+        return self.current_layer_id;
     }
 
     pub fn get_mut_layer(&mut self, id: usize) -> &mut Layer {
@@ -165,48 +165,14 @@ impl Canvas {
                         }
                         pixels = &scaled_pixels;
                     }
-                    let pixel_x = match layer.position.x {
-                        Position::Default => 0,
-                        Position::Point(x) => x,
-                        Position::Percent(x) => (x as f32 * self.resolution.width as f32) as u32,
-                        Position::Center => {
-                            if target_width < (self.resolution.width as f32 / 2.0) as usize {
-                                ((self.resolution.width as f32 / 2.0) - (target_width as f32 / 2.0))
-                                    as u32
-                            } else {
-                                (self.resolution.width as f32 / 2.0) as u32
-                            }
-                        }
-                        Position::End => {
-                            if target_width < self.resolution.width {
-                                (self.resolution.width - target_width) as u32
-                            } else {
-                                0
-                            }
-                        }
-                    };
-                    let pixel_y = match layer.position.y {
-                        Position::Default => 0,
-                        Position::Point(y) => y,
-                        Position::Percent(y) => (y * self.resolution.height as f32) as u32,
-                        Position::Center => {
-                            if target_height < (self.resolution.height as f32 / 2.0) as usize {
-                                ((self.resolution.height as f32 / 2.0)
-                                    - (target_height as f32 / 2.0))
-                                    as u32
-                            } else {
-                                (self.resolution.height as f32 / 2.0) as u32
-                            }
-                        }
-                        Position::End => {
-                            if target_height < self.resolution.height {
-                                (self.resolution.height - target_height) as u32
-                            } else {
-                                0
-                            }
-                        }
-                    };
-                    let base_index = pixel_x + (pixel_y * self.resolution.width as u32);
+
+                    let (pixel_x, pixel_y) = layer.position.to_translation(
+                        target_width as f32,
+                        target_height as f32,
+                        &self.resolution,
+                    );
+
+                    let base_index = pixel_x + (pixel_y * self.resolution.width as f32);
                     for row in 0..target_height {
                         for col in 0..target_width {
                             let col = target_width - col - 1;
@@ -229,6 +195,8 @@ impl Canvas {
                     graphic.stroke_width,
                     graphic.stroke_color,
                     graphic.stroke_color,
+                    &layer.position,
+                    layer.scale,
                     &mut final_image,
                     &self.resolution,
                     straight_line_from_to,
@@ -291,7 +259,7 @@ impl Canvas {
         stroke_width: usize,
         stroke_color: u32,
         fill_color: u32,
-    ) {
+    ) -> usize {
         let commands = svg_to_path(path).unwrap();
         let layer = Layer::from_element(
             Element::Graphic(Graphic {
@@ -302,8 +270,8 @@ impl Canvas {
             }),
             self.current_layer_id,
         );
-        self.current_layer_id += 1;
-        self.add_layer(layer)
+        self.add_layer(layer);
+        return self.current_layer_id - 1;
     }
 
     pub fn add_text(
@@ -327,7 +295,6 @@ impl Canvas {
                 fill_color,
             }),
         };
-        self.current_layer_id += 1;
         self.add_layer(layer);
         return self.current_layer_id - 1;
     }
@@ -469,6 +436,35 @@ impl LayerPosition {
             x: Position::Center,
             y: Position::Center,
         };
+    }
+    pub fn to_translation(&self, width: f32, height: f32, resolution: &Resolution) -> (f32, f32) {
+        let pixel_x = match self.x {
+            Position::Default => 0f32,
+            Position::Point(x) => x as f32,
+            Position::Percent(x) => x * resolution.width as f32,
+            Position::Center => (resolution.width as f32 - width) / 2.0,
+            Position::End => {
+                if width < resolution.width as f32 {
+                    resolution.width as f32 - width
+                } else {
+                    0f32
+                }
+            }
+        };
+        let pixel_y = match self.y {
+            Position::Default => 0f32,
+            Position::Point(y) => y as f32,
+            Position::Percent(y) => y * resolution.height as f32,
+            Position::Center => (resolution.height as f32 - height) / 2.0,
+            Position::End => {
+                if height < resolution.height as f32 {
+                    resolution.height as f32 - height
+                } else {
+                    0f32
+                }
+            }
+        };
+        return (pixel_x, pixel_y);
     }
 }
 
