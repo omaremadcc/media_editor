@@ -43,6 +43,11 @@ fn main() -> () {
 
     let circle_layer_id = canvas.add_circle(100., 1, Colors::red(), Colors::blue());
 
+    let id = canvas.add_rectangle(400, 400, 200, 200, 1, Colors::red(), Colors::blue());
+    let layer = canvas.get_mut_layer(id);
+    layer.position.x = Position::End;
+    layer.scale = 3.0;
+
     let res = canvas.to_image();
     res.write_to_png("output15.png", true);
     return ();

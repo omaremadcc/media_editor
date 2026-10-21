@@ -41,12 +41,12 @@ type PlotPixelFn = fn(usize, usize, Pixel, Option<usize>, &mut Image, &Resolutio
 impl GraphicType {
     pub fn render(
         &self,
-        width: usize,
+        stroke_width: usize,
         stroke_color: u32,
         fill_color: u32,
         position: &LayerPosition,
         scale: f32,
-        mut final_image: &mut Image,
+        final_image: &mut Image,
         resolution: &Resolution,
         straight_line_from_to: StraightLineFromToFn,
         plot_pixel: PlotPixelFn,
@@ -54,19 +54,21 @@ impl GraphicType {
         match &self {
             // Basic Bresenham Algorithm
             GraphicType::Line { start, end } => {
-                let ((x0, y0), (x1, y1)) = if start.0 > end.0 {
-                    (end, start)
-                } else {
-                    (start, end)
-                };
-
-                straight_line_from_to(
-                    (*x0, *y0),
-                    (*x1, *y1),
-                    width,
+                let edges = vec![(
+                    (start.0 as f32, start.1 as f32),
+                    (end.0 as f32, end.1 as f32),
+                )];
+                render_edges(
+                    edges,
+                    stroke_width,
                     stroke_color,
+                    fill_color,
+                    position,
+                    scale,
                     final_image,
                     resolution,
+                    straight_line_from_to,
+                    plot_pixel,
                 );
             }
             GraphicType::Rectangle {
@@ -75,58 +77,39 @@ impl GraphicType {
                 start,
             } => {
                 let (x, y) = start;
-                // Fill
-                for i in 1..(*width) {
-                    for j in 1..(*height) {
-                        plot_pixel(
-                            x + i,
-                            y + j,
-                            Pixel::from_hex(fill_color),
-                            None,
-                            final_image,
-                            resolution,
-                        );
-                    }
-                }
-
-                // Top
-                straight_line_from_to(
-                    (*x, *y),
-                    (*x + width, *y),
-                    *width,
+                let edges = vec![
+                    // Top
+                    (
+                        (*x as f32, *y as f32),
+                        (*x as f32 + *width as f32, *y as f32),
+                    ),
+                    // Right
+                    (
+                        (*x as f32 + *width as f32, *y as f32),
+                        (*x as f32 + *width as f32, *y as f32 + *height as f32),
+                    ),
+                    // Bottom
+                    (
+                        (*x as f32 + *width as f32, *y as f32 + *height as f32),
+                        (*x as f32, *y as f32 + *height as f32),
+                    ),
+                    // Left
+                    (
+                        (*x as f32, *y as f32 + *height as f32),
+                        (*x as f32, *y as f32),
+                    ),
+                ];
+                render_edges(
+                    edges,
+                    stroke_width,
                     stroke_color,
-                    &mut final_image,
+                    fill_color,
+                    position,
+                    scale,
+                    final_image,
                     resolution,
-                );
-
-                // Bottom
-                straight_line_from_to(
-                    (*x, *y + height),
-                    (*x + width, *y + height),
-                    *width,
-                    stroke_color,
-                    &mut final_image,
-                    resolution,
-                );
-
-                // Left
-                straight_line_from_to(
-                    (*x, *y),
-                    (*x, *y + height),
-                    *width,
-                    stroke_color,
-                    &mut final_image,
-                    resolution,
-                );
-
-                // Right
-                straight_line_from_to(
-                    (*x + width, *y),
-                    (*x + width, *y + height),
-                    *width,
-                    stroke_color,
-                    &mut final_image,
-                    resolution,
+                    straight_line_from_to,
+                    plot_pixel,
                 );
             }
             GraphicType::Path { commands } => {
@@ -303,7 +286,7 @@ impl GraphicType {
                 }
                 render_edges(
                     edges,
-                    width,
+                    stroke_width,
                     stroke_color,
                     fill_color,
                     position,
@@ -349,7 +332,7 @@ impl GraphicType {
                 }
                 render_edges(
                     edges,
-                    width,
+                    stroke_width,
                     stroke_color,
                     fill_color,
                     position,
@@ -398,7 +381,7 @@ impl GraphicType {
                 let edges = path_to_edges(commands);
                 render_edges(
                     edges,
-                    width,
+                    stroke_width,
                     stroke_color,
                     fill_color,
                     position,
