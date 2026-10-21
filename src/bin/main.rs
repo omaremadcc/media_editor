@@ -41,6 +41,8 @@ fn main() -> () {
     let text_layer = canvas.get_mut_layer(text_layer_id);
     text_layer.position.y = Position::End;
 
+    let circle_layer_id = canvas.add_circle(100., 1, Colors::red(), Colors::blue());
+
     let res = canvas.to_image();
     res.write_to_png("output15.png", true);
     return ();

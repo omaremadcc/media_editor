@@ -24,6 +24,9 @@ pub enum GraphicType {
         size: usize, // pixels
         text: String,
     },
+    Circle {
+        radius: f32,
+    },
 }
 
 use crate::canvas::LayerPosition;
@@ -344,6 +347,55 @@ impl GraphicType {
 
                     current_x += hor_advance;
                 }
+                render_edges(
+                    edges,
+                    width,
+                    stroke_color,
+                    fill_color,
+                    position,
+                    scale,
+                    final_image,
+                    resolution,
+                    straight_line_from_to,
+                    plot_pixel,
+                );
+            }
+            GraphicType::Circle { radius } => {
+                let (cx, cy) = (0f32, 0f32);
+
+                let r = *radius;
+
+                let mut commands = Vec::new();
+
+                let k = 0.552_284_8 * r;
+
+                commands.push(PathCommand::MoveTo((cx, cy - r)));
+
+                commands.push(PathCommand::CubicTo(
+                    (cx + r, cy),
+                    (cx + k, cy - r),
+                    (cx + r, cy - k),
+                ));
+
+                commands.push(PathCommand::CubicTo(
+                    (cx, cy + r),
+                    (cx + r, cy + k),
+                    (cx + k, cy + r),
+                ));
+
+                commands.push(PathCommand::CubicTo(
+                    (cx - r, cy),
+                    (cx - k, cy + r),
+                    (cx - r, cy + k),
+                ));
+
+                commands.push(PathCommand::CubicTo(
+                    (cx, cy - r),
+                    (cx - r, cy - k),
+                    (cx - k, cy - r),
+                ));
+
+                let edges = path_to_edges(commands);
                 render_edges(
                     edges,
                     width,
