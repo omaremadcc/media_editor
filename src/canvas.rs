@@ -231,8 +231,6 @@ impl Canvas {
     }
     pub fn add_rectangle(
         &mut self,
-        x: usize,
-        y: usize,
         width: usize,
         height: usize,
         stroke_width: usize,
@@ -240,11 +238,7 @@ impl Canvas {
         fill_color: u32,
     ) -> usize {
         let element = Element::Graphic(Graphic {
-            graphic_type: GraphicType::Rectangle {
-                start: (x, y),
-                width,
-                height,
-            },
+            graphic_type: GraphicType::Rectangle { width, height },
             stroke_width,
             stroke_color,
             fill_color,

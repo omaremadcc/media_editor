@@ -15,13 +15,12 @@ pub enum GraphicType {
     Rectangle {
         width: usize,
         height: usize,
-        start: (usize, usize),
     },
     Path {
         commands: Vec<PathCommand>,
     },
     Text {
-        size: usize, // pixels
+        size: usize, // pixelss
         text: String,
     },
     Circle {
@@ -71,33 +70,23 @@ impl GraphicType {
                     plot_pixel,
                 );
             }
-            GraphicType::Rectangle {
-                width,
-                height,
-                start,
-            } => {
-                let (x, y) = start;
+            GraphicType::Rectangle { width, height } => {
+                let (x, y) = (0, 0);
                 let edges = vec![
                     // Top
-                    (
-                        (*x as f32, *y as f32),
-                        (*x as f32 + *width as f32, *y as f32),
-                    ),
+                    ((x as f32, y as f32), (x as f32 + *width as f32, y as f32)),
                     // Right
                     (
-                        (*x as f32 + *width as f32, *y as f32),
-                        (*x as f32 + *width as f32, *y as f32 + *height as f32),
+                        (x as f32 + *width as f32, y as f32),
+                        (x as f32 + *width as f32, y as f32 + *height as f32),
                     ),
                     // Bottom
                     (
-                        (*x as f32 + *width as f32, *y as f32 + *height as f32),
-                        (*x as f32, *y as f32 + *height as f32),
+                        (x as f32 + *width as f32, y as f32 + *height as f32),
+                        (x as f32, y as f32 + *height as f32),
                     ),
                     // Left
-                    (
-                        (*x as f32, *y as f32 + *height as f32),
-                        (*x as f32, *y as f32),
-                    ),
+                    ((x as f32, y as f32 + *height as f32), (x as f32, y as f32)),
                 ];
                 render_edges(
                     edges,
