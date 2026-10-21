@@ -194,7 +194,7 @@ impl Canvas {
                 Element::Graphic(graphic) => graphic.graphic_type.render(
                     graphic.stroke_width,
                     graphic.stroke_color,
-                    graphic.stroke_color,
+                    graphic.fill_color,
                     &layer.position,
                     layer.scale,
                     &mut final_image,
