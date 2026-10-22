@@ -465,6 +465,7 @@ impl LayerPosition {
                     0f32
                 }
             }
+            Position::PointFromEnd(x) => resolution.width as f32 - width - x as f32,
         };
         let pixel_y = match self.y {
             Position::Default => 0f32,
@@ -478,6 +479,7 @@ impl LayerPosition {
                     0f32
                 }
             }
+            Position::PointFromEnd(y) => resolution.height as f32 - height - y as f32,
         };
         return (pixel_x, pixel_y);
     }
@@ -487,6 +489,7 @@ impl LayerPosition {
 pub enum Position {
     Default,
     Point(u32),
+    PointFromEnd(u32),
     Percent(f32),
     Center,
     End,

@@ -32,21 +32,21 @@ fn main() -> () {
 
     let text_layer_id = canvas.add_text(
         String::from("omar\nemad"),
-        500,
+        50,
         1,
         Some(Colors::green()),
         None,
     );
 
     let text_layer = canvas.get_mut_layer(text_layer_id);
-    text_layer.position.y = Position::End;
+    text_layer.position.y = Position::PointFromEnd(100);
 
     let circle_layer_id = canvas.add_circle(100., 1, Some(Colors::red()), Some(Colors::blue()));
 
     let id = canvas.add_rectangle(200, 200, 1, Some(Colors::red()), None);
     let layer = canvas.get_mut_layer(id);
     layer.position.x = Position::End;
-    layer.scale = 3.0;
+    layer.scale = 3.00;
 
     let res = canvas.to_image();
     res.write_to_png("output15.png", true);
