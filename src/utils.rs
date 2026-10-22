@@ -88,3 +88,9 @@ pub fn mirror_pixels_vertically(pixels: &Vec<Pixel>, width: usize, height: usize
     }
     new_pixels
 }
+
+pub fn string_hex_to_u32(hex: &str) -> u32 {
+    let hex = hex.trim_start_matches('#');
+    let hex = hex.trim_start_matches("0x");
+    u32::from_str_radix(hex, 16).unwrap()
+}

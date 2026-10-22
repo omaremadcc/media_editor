@@ -202,6 +202,22 @@ impl Canvas {
                     straight_line_from_to,
                     plot_pixel,
                 ),
+                Element::SVG(SVGData { elements, .. }) => {
+                    for graphic in elements {
+                        dbg!(graphic);
+                        graphic.graphic_type.render(
+                            graphic.stroke_width,
+                            graphic.stroke_color,
+                            graphic.fill_color,
+                            &layer.position,
+                            layer.scale,
+                            &mut final_image,
+                            &self.resolution,
+                            straight_line_from_to,
+                            plot_pixel,
+                        );
+                    }
+                }
             }
         }
 
@@ -495,10 +511,13 @@ pub enum Position {
     End,
 }
 
+use crate::formats::svg::SVGData;
+
 #[derive(Debug)]
 pub enum Element {
     Image(Image),
     Graphic(Graphic),
+    SVG(SVGData),
 }
 
 impl Element {
@@ -526,6 +545,9 @@ impl Element {
                     println!("Circle")
                 }
             },
+            Self::SVG(..) => {
+                println!("svg");
+            }
         }
     }
 }
