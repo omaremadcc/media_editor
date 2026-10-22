@@ -1,8 +1,8 @@
 pub mod canvas;
 pub mod colors;
+pub mod formats;
 pub mod graphic;
 pub mod image;
-pub mod png;
 pub mod resolutions;
 pub mod svg;
 pub mod text;
