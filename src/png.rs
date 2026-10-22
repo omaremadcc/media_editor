@@ -199,6 +199,11 @@ impl Image {
 
         append_chunk(&mut file, b"IEND", &[]);
 
+        let mut path = String::from(path);
+        if !path.ends_with(".png") {
+            path.push_str(".png");
+        }
+
         std::fs::write(path, file).map_err(|e| e)?;
 
         Ok(())

@@ -172,6 +172,11 @@ impl Image {
             file[2 + index] = byte.clone();
         }
 
+        let mut path = String::from(path);
+        if !path.ends_with(".bmp") {
+            path.push_str(".bmp");
+        }
+
         // Write to file
         std::fs::write(path, file).map_err(|e| e)
     }
