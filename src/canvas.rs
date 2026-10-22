@@ -215,7 +215,7 @@ impl Canvas {
         x1: usize,
         y1: usize,
         width: usize,
-        stroke_color: u32,
+        stroke_color: Option<u32>,
     ) -> usize {
         let element = Element::Graphic(Graphic {
             graphic_type: GraphicType::Line {
@@ -224,7 +224,7 @@ impl Canvas {
             },
             stroke_width: width,
             stroke_color,
-            fill_color: 0,
+            fill_color: None,
         });
         self.add_layer(Layer::from_element(element, self.current_layer_id));
         return self.current_layer_id - 1;
@@ -234,8 +234,8 @@ impl Canvas {
         width: usize,
         height: usize,
         stroke_width: usize,
-        stroke_color: u32,
-        fill_color: u32,
+        stroke_color: Option<u32>,
+        fill_color: Option<u32>,
     ) -> usize {
         let element = Element::Graphic(Graphic {
             graphic_type: GraphicType::Rectangle { width, height },
@@ -251,8 +251,8 @@ impl Canvas {
         &mut self,
         path: &str,
         stroke_width: usize,
-        stroke_color: u32,
-        fill_color: u32,
+        stroke_color: Option<u32>,
+        fill_color: Option<u32>,
     ) -> usize {
         let commands = svg_to_path(path).unwrap();
         let layer = Layer::from_element(
@@ -273,8 +273,8 @@ impl Canvas {
         text: String,
         size: usize,
         stroke_width: usize,
-        stroke_color: u32,
-        fill_color: u32,
+        stroke_color: Option<u32>,
+        fill_color: Option<u32>,
     ) -> usize {
         let layer = Layer {
             id: self.current_layer_id,
@@ -297,8 +297,8 @@ impl Canvas {
         &mut self,
         radius: f32,
         stroke_width: usize,
-        stroke_color: u32,
-        fill_color: u32,
+        stroke_color: Option<u32>,
+        fill_color: Option<u32>,
     ) -> usize {
         let layer = Layer::from_element(
             Element::Graphic(Graphic {

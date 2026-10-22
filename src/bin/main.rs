@@ -26,24 +26,24 @@ fn main() -> () {
         M3 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H3zm0-2h14a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V3a3 3 0 0 1 3-3z
 				"
     );
-    let layer_id = canvas.add_svg_path(&svg_path, 1, Colors::white(), Colors::yellow());
+    let layer_id = canvas.add_svg_path(&svg_path, 1, Some(Colors::white()), Some(Colors::yellow()));
     let layer = canvas.get_mut_layer(layer_id);
     // layer.position.x = Position::End;
 
     let text_layer_id = canvas.add_text(
         String::from("omar\nemad"),
-        50,
+        500,
         1,
-        Colors::green(),
-        Colors::orange(),
+        Some(Colors::green()),
+        None,
     );
 
     let text_layer = canvas.get_mut_layer(text_layer_id);
     text_layer.position.y = Position::End;
 
-    let circle_layer_id = canvas.add_circle(100., 1, Colors::red(), Colors::blue());
+    let circle_layer_id = canvas.add_circle(100., 1, Some(Colors::red()), Some(Colors::blue()));
 
-    let id = canvas.add_rectangle(200, 200, 1, Colors::red(), Colors::blue());
+    let id = canvas.add_rectangle(200, 200, 1, Some(Colors::red()), None);
     let layer = canvas.get_mut_layer(id);
     layer.position.x = Position::End;
     layer.scale = 3.0;

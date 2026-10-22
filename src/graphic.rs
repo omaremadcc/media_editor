@@ -2,8 +2,8 @@
 pub struct Graphic {
     pub graphic_type: GraphicType,
     pub stroke_width: usize,
-    pub stroke_color: u32,
-    pub fill_color: u32,
+    pub stroke_color: Option<u32>,
+    pub fill_color: Option<u32>,
 }
 
 #[derive(Debug)]
@@ -41,8 +41,8 @@ impl GraphicType {
     pub fn render(
         &self,
         stroke_width: usize,
-        stroke_color: u32,
-        fill_color: u32,
+        stroke_color: Option<u32>,
+        fill_color: Option<u32>,
         position: &LayerPosition,
         scale: f32,
         final_image: &mut Image,
@@ -549,8 +549,8 @@ pub fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))
 pub fn render_edges(
     edges: Vec<((f32, f32), (f32, f32))>,
     stroke_width: usize,
-    stroke_color: u32,
-    fill_color: u32,
+    stroke_color: Option<u32>,
+    fill_color: Option<u32>,
     position: &LayerPosition,
     scale: f32,
     mut final_image: &mut Image,
@@ -611,55 +611,61 @@ pub fn render_edges(
         })
         .collect();
 
-    for y in (min_y as i32 + translate_y as i32)..(max_y as i32 + translate_y as i32) {
-        let scan_y = y as f32 + 0.5;
+    // Filling the thing
+    if let Some(fill_color) = fill_color {
+        for y in (min_y as i32 + translate_y as i32)..(max_y as i32 + translate_y as i32) {
+            let scan_y = y as f32 + 0.5;
 
-        intersections.clear();
+            intersections.clear();
 
-        for &((x0, y0), (x1, y1)) in &edges {
-            if y0 == y1 {
-                continue;
+            for &((x0, y0), (x1, y1)) in &edges {
+                if y0 == y1 {
+                    continue;
+                }
+
+                let edge_min_y = y0.min(y1);
+                let edge_max_y = y0.max(y1);
+
+                if edge_min_y <= scan_y && scan_y < edge_max_y {
+                    let t = (scan_y - y0) / (y1 - y0);
+                    let x = x0 + t * (x1 - x0);
+                    intersections.push(x);
+                }
             }
+            intersections.sort_by(|a, b| a.total_cmp(b));
+            for pair in intersections.chunks_exact(2) {
+                let left = pair[0];
+                let right = pair[1];
 
-            let edge_min_y = y0.min(y1);
-            let edge_max_y = y0.max(y1);
+                let start_x = (left - 0.5).ceil() as i32;
+                let end_x = (right - 0.5).ceil() as i32;
 
-            if edge_min_y <= scan_y && scan_y < edge_max_y {
-                let t = (scan_y - y0) / (y1 - y0);
-                let x = x0 + t * (x1 - x0);
-                intersections.push(x);
-            }
-        }
-        intersections.sort_by(|a, b| a.total_cmp(b));
-        for pair in intersections.chunks_exact(2) {
-            let left = pair[0];
-            let right = pair[1];
-
-            let start_x = (left - 0.5).ceil() as i32;
-            let end_x = (right - 0.5).ceil() as i32;
-
-            for x in start_x..end_x {
-                plot_pixel(
-                    x as usize,
-                    y as usize,
-                    Pixel::from_hex(fill_color),
-                    None,
-                    &mut final_image,
-                    resolution,
-                );
+                for x in start_x..end_x {
+                    plot_pixel(
+                        x as usize,
+                        y as usize,
+                        Pixel::from_hex(fill_color),
+                        None,
+                        &mut final_image,
+                        resolution,
+                    );
+                }
             }
         }
     }
 
-    for edge in edges {
-        straight_line_from_to(
-            (edge.0.0 as usize, edge.0.1 as usize),
-            (edge.1.0 as usize, edge.1.1 as usize),
-            stroke_width as usize,
-            stroke_color,
-            &mut final_image,
-            resolution,
-        );
+    // Draw the edges
+    if let Some(stroke_color) = stroke_color {
+        for edge in edges {
+            straight_line_from_to(
+                (edge.0.0 as usize, edge.0.1 as usize),
+                (edge.1.0 as usize, edge.1.1 as usize),
+                stroke_width as usize,
+                stroke_color,
+                &mut final_image,
+                resolution,
+            );
+        }
     }
 }
 
