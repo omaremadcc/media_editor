@@ -305,6 +305,7 @@ impl GraphicType {
                     line_height = *size as f32 * 0.75;
 
                     let edges_inner = path_to_edges(path.commands);
+
                     let edges_inner: Vec<((f32, f32), (f32, f32))> = edges_inner
                         .iter()
                         .map(|((x, y), (x1, y1))| {
@@ -319,8 +320,27 @@ impl GraphicType {
 
                     current_x += hor_advance;
                 }
+                let min_y = edges
+                    .iter()
+                    .flat_map(|&(p0, p1)| [p0.1, p1.1])
+                    .fold(f32::INFINITY, f32::min)
+                    .floor();
+
+                let max_y = edges
+                    .iter()
+                    .flat_map(|&(p0, p1)| [p0.1, p1.1])
+                    .fold(f32::NEG_INFINITY, f32::max)
+                    .ceil();
+
+                let height = (max_y - min_y) * scale;
+
+                let edges_flipped = edges
+                    .into_iter()
+                    .map(|(p0, p1)| ((p0.0, height - p0.1), (p1.0, height - p1.1)))
+                    .collect::<Vec<_>>();
+
                 render_edges(
-                    edges,
+                    edges_flipped,
                     stroke_width,
                     stroke_color,
                     fill_color,
@@ -332,6 +352,7 @@ impl GraphicType {
                     plot_pixel,
                 );
             }
+
             GraphicType::Circle { radius } => {
                 let (cx, cy) = (0f32, 0f32);
 

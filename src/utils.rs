@@ -1,3 +1,5 @@
+use crate::Pixel;
+
 pub fn calculate_little_endian(buffer: &[u8]) -> u32 {
     let mut result = 0u32;
     for (i, &byte) in buffer.iter().enumerate() {
@@ -72,4 +74,17 @@ pub fn distance_between_point_and_line_mid_point(
     );
 
     return distance_between_points(point, line_mid_point);
+}
+
+pub fn mirror_pixels_vertically(pixels: &Vec<Pixel>, width: usize, height: usize) -> Vec<Pixel> {
+    let mut new_pixels = Vec::new();
+
+    for row in 0..height {
+        let row = height - row - 1;
+        for col in 0..width {
+            let pixel = pixels[row * width + col];
+            new_pixels.push(pixel);
+        }
+    }
+    new_pixels
 }

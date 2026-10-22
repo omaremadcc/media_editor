@@ -1,4 +1,3 @@
-pub mod bmp;
 pub mod canvas;
 pub mod colors;
 pub mod graphic;

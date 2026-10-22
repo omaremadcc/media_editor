@@ -593,45 +593,40 @@ pub fn svg_to_path(data: &str) -> Result<Vec<PathCommand>, String> {
             _ => println!("Unknown command: {}", command.command),
         }
     }
-    let height = max_y + min_y;
-    let mut path_commands_flipped = vec![];
-    let scale = 20.0;
+    let mut path_commands_transformed = vec![];
+    let scale = 1.0;
     let translate_x = -min_x;
     let translate_y = -min_y;
 
-    let transform = |x: f32, y: f32| -> (f32, f32) {
-        (
-            (x + translate_x) * scale,
-            (height - y + translate_y) * scale,
-        )
-    };
+    let transform =
+        |x: f32, y: f32| -> (f32, f32) { ((x + translate_x) * scale, (y + translate_y) * scale) };
 
     for command in path_commands {
         match command {
             PathCommand::LineTo((x, y)) => {
-                path_commands_flipped.push(PathCommand::LineTo(transform(x, y)));
+                path_commands_transformed.push(PathCommand::LineTo(transform(x, y)));
             }
             PathCommand::CubicTo((x1, y1), (x2, y2), (x3, y3)) => {
-                path_commands_flipped.push(PathCommand::CubicTo(
+                path_commands_transformed.push(PathCommand::CubicTo(
                     transform(x1, y1),
                     transform(x2, y2),
                     transform(x3, y3),
                 ));
             }
             PathCommand::QuadraticTo((x1, y1), (x2, y2)) => {
-                path_commands_flipped.push(PathCommand::QuadraticTo(
+                path_commands_transformed.push(PathCommand::QuadraticTo(
                     transform(x1, y1),
                     transform(x2, y2),
                 ));
             }
             PathCommand::MoveTo((x, y)) => {
-                path_commands_flipped.push(PathCommand::MoveTo(transform(x, y)));
+                path_commands_transformed.push(PathCommand::MoveTo(transform(x, y)));
             }
-            _ => path_commands_flipped.push(command),
+            _ => path_commands_transformed.push(command),
         }
     }
 
-    Ok(path_commands_flipped)
+    Ok(path_commands_transformed)
 }
 
 // THIS FUNCTION WAS WRITTIN BY AI

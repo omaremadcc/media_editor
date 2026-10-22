@@ -141,10 +141,7 @@ impl Image {
                 .collect::<Vec<_>>()
         };
 
-        let mut image = Image::new(pixels, Resolution::new(width as usize, height as usize));
-
-        // Reverse the pixel because we use bottom to top arrangement
-        image.mirror_image_vertically();
+        let image = Image::new(pixels, Resolution::new(width as usize, height as usize));
 
         Ok(image)
     }
@@ -180,7 +177,7 @@ impl Image {
 
         let mut idat_chunk_data = Vec::new();
 
-        let pixels = mirror_pixels_vertically(&self.pixels, height, width);
+        let pixels = &self.pixels;
 
         pixels.chunks_exact(width).for_each(|pixels| {
             // Filter type
@@ -220,17 +217,4 @@ fn append_chunk(file: &mut Vec<u8>, kind: &[u8; 4], data: &[u8]) {
     let mut hasher = crc32fast::Hasher::new();
     hasher.update(&crc_data);
     file.extend_from_slice(&hasher.finalize().to_be_bytes());
-}
-
-pub fn mirror_pixels_vertically(pixels: &Vec<Pixel>, height: usize, width: usize) -> Vec<Pixel> {
-    let mut new_pixels = Vec::new();
-
-    for row in 0..height {
-        let row = height - row - 1;
-        for col in 0..width {
-            let pixel = pixels[row * width + col];
-            new_pixels.push(pixel);
-        }
-    }
-    new_pixels
 }

@@ -1,4 +1,5 @@
 use crate::canvas::Adjustment;
+use crate::utils::mirror_pixels_vertically;
 use crate::{Resolution, utils::calculate_little_endian};
 
 use std::io::Error;
@@ -19,7 +20,7 @@ impl Image {
     pub fn read_from_bmp(buffer: &[u8]) -> Result<Self, Error> {
         let pixel_offset = calculate_little_endian(&buffer[10..14]) as usize;
         let width = calculate_little_endian(&buffer[18..22]) as usize;
-        let height = calculate_little_endian(&buffer[22..26]);
+        let height = calculate_little_endian(&buffer[22..26]) as usize;
         let bits_per_pixel = calculate_little_endian(&buffer[28..30]) as usize;
 
         // Total row width in bytes (padded to a 4-byte / 32-bit boundary)
@@ -42,11 +43,14 @@ impl Image {
             }
             no_padding_pixel_bytes.push(byte.clone());
         }
+
         for chunk in no_padding_pixel_bytes.chunks_exact(bits_per_pixel / 8) {
             let alpha = if bits_per_pixel == 32 { chunk[3] } else { 255 };
 
             pixels.push(Pixel::new(chunk[2], chunk[1], chunk[0], alpha));
         }
+
+        let pixels = mirror_pixels_vertically(&pixels, width, height);
 
         Ok(Self {
             pixels,
@@ -114,6 +118,7 @@ impl Image {
         // image data size
         let bytes_per_pixel = if is_alpha { 4 } else { 3 } as usize;
         let width = self.resolution.width;
+        let height = self.resolution.height;
         let row_ideal_size = (width * bytes_per_pixel + bytes_per_pixel) & !bytes_per_pixel;
         let row_padding = row_ideal_size - bytes_per_pixel * width;
         for byte in (row_ideal_size as u32 * self.resolution.height as u32).to_le_bytes() {
@@ -145,7 +150,9 @@ impl Image {
             file[10 + i] = (file.len() as u32).to_le_bytes()[i];
         }
 
-        for row in self.pixels.chunks_exact(width as usize) {
+        let pixels = mirror_pixels_vertically(&self.pixels, width, height);
+
+        for row in pixels.chunks_exact(width as usize) {
             // 1. Write pixel bytes for this row
             for pixel in row {
                 if is_alpha {
