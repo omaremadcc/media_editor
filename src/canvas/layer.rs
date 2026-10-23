@@ -58,40 +58,69 @@ pub struct Layer {
 
 impl Layer {
     pub fn set_x_position_end(&mut self) {
-        self.position.x = Position::End
+        self.position.x = vec![Position::End]
     }
     pub fn set_y_position_end(&mut self) {
-        self.position.y = Position::End
+        self.position.y = vec![Position::End]
     }
     pub fn set_x_position_start(&mut self) {
-        self.position.x = Position::Default
+        self.position.x = vec![Position::Start]
     }
     pub fn set_y_position_start(&mut self) {
-        self.position.y = Position::Default
+        self.position.y = vec![Position::Start]
     }
     pub fn center_layer(&mut self) {
         self.position = LayerPosition::center();
     }
+    pub fn set_position_start(&mut self) {
+        self.position = LayerPosition::start()
+    }
+    pub fn set_position_end(&mut self) {
+        self.position = LayerPosition::end()
+    }
     pub fn center_layer_x(&mut self) {
-        self.position.x = Position::Center;
+        self.position.x = vec![Position::Center];
     }
     pub fn center_layer_y(&mut self) {
-        self.position.y = Position::Center;
+        self.position.y = vec![Position::Center];
     }
     pub fn move_to_x_percentage(&mut self, percentage: f32) {
-        self.position.x = Position::Percent(percentage);
+        self.position.x = vec![Position::Percent(percentage)];
     }
     pub fn move_to_percentage_y(&mut self, percentage: f32) {
-        self.position.y = Position::Percent(percentage);
+        self.position.y = vec![Position::Percent(percentage)];
     }
-    pub fn move_to_point_x(&mut self, x: u32) {
-        self.position.x = Position::Point(x);
+    pub fn move_to_point_x(&mut self, x: i32) {
+        self.position.x = vec![Position::Point(x)];
     }
-    pub fn move_to_point_y(&mut self, y: u32) {
-        self.position.y = Position::Point(y);
+    pub fn move_to_point_y(&mut self, y: i32) {
+        self.position.y = vec![Position::Point(y)];
     }
     pub fn scale_layer(&mut self, scale: f32) {
         self.scale = scale;
+    }
+
+    pub fn move_layer_x_pixels(&mut self, pixels: i32) {
+        self.position.x.push(Position::MovePixels(pixels));
+    }
+    pub fn move_layer_y_pixels(&mut self, pixels: i32) {
+        self.position.y.push(Position::MovePixels(pixels));
+    }
+    pub fn move_layer_x_percent(&mut self, percentage: f32) {
+        self.position.x.push(Position::MovePercent(percentage));
+    }
+    pub fn move_layer_y_percent(&mut self, percentage: f32) {
+        self.position.y.push(Position::MovePercent(percentage));
+    }
+    pub fn move_layer_x_percentage_relative(&mut self, percentage: f32) {
+        self.position
+            .x
+            .push(Position::MovePercentRelative(percentage));
+    }
+    pub fn move_layer_y_percentage_relative(&mut self, percentage: f32) {
+        self.position
+            .y
+            .push(Position::MovePercentRelative(percentage));
     }
 
     pub fn change_exposure(&mut self, exposure: f32) {
@@ -121,7 +150,7 @@ impl Layer {
     pub(crate) fn from_element(element: Element, id: usize) -> Self {
         Self {
             element,
-            position: LayerPosition::default(),
+            position: LayerPosition::start(),
             scale: 1.0,
             opacity: 1f32,
             id,
@@ -132,64 +161,78 @@ impl Layer {
 
 #[derive(Debug)]
 pub struct LayerPosition {
-    pub x: Position,
-    pub y: Position,
+    pub x: Vec<Position>,
+    pub y: Vec<Position>,
 }
 
 impl LayerPosition {
-    pub fn default() -> Self {
+    pub fn start() -> Self {
         return Self {
-            x: Position::Default,
-            y: Position::Default,
+            x: vec![Position::Start],
+            y: vec![Position::Start],
         };
     }
     pub fn center() -> Self {
         return Self {
-            x: Position::Center,
-            y: Position::Center,
+            x: vec![Position::Center],
+            y: vec![Position::Center],
+        };
+    }
+    pub fn end() -> Self {
+        return Self {
+            x: vec![Position::End],
+            y: vec![Position::End],
         };
     }
     pub fn to_translation(&self, width: f32, height: f32, resolution: &Resolution) -> (f32, f32) {
-        let pixel_x = match self.x {
-            Position::Default => 0f32,
-            Position::Point(x) => x as f32,
-            Position::Percent(x) => x * resolution.width as f32,
-            Position::Center => (resolution.width as f32 - width) / 2.0,
+        let mut pixel_x = 0f32;
+        self.x.iter().for_each(|position| match position {
+            Position::Start => pixel_x = 0f32,
             Position::End => {
                 if width < resolution.width as f32 {
-                    resolution.width as f32 - width
+                    pixel_x = resolution.width as f32 - width;
                 } else {
-                    0f32
+                    pixel_x = 0f32;
                 }
             }
-            Position::PointFromEnd(x) => resolution.width as f32 - width - x as f32,
-        };
-        let pixel_y = match self.y {
-            Position::Default => 0f32,
-            Position::Point(y) => y as f32,
-            Position::Percent(y) => y * resolution.height as f32,
-            Position::Center => (resolution.height as f32 - height) / 2.0,
+            Position::Center => pixel_x = (resolution.width as f32 - width) / 2.0,
+            Position::Point(point) => pixel_x = *point as f32,
+            Position::Percent(percent) => pixel_x = *percent,
+            Position::MovePercent(percent) => pixel_x += percent * resolution.width as f32,
+            Position::MovePixels(pixels) => pixel_x += *pixels as f32,
+            Position::MovePercentRelative(percent) => pixel_x += width * percent,
+        });
+        let mut pixel_y = 0f32;
+        self.y.iter().for_each(|position| match position {
+            Position::Start => pixel_y = 0f32,
             Position::End => {
                 if height < resolution.height as f32 {
-                    resolution.height as f32 - height
+                    pixel_y = resolution.height as f32 - height;
                 } else {
-                    0f32
+                    pixel_y = 0f32;
                 }
             }
-            Position::PointFromEnd(y) => resolution.height as f32 - height - y as f32,
-        };
+            Position::Center => pixel_y = (resolution.height as f32 - height) / 2.0,
+            Position::Point(point) => pixel_y = *point as f32,
+            Position::Percent(percent) => pixel_y = *percent,
+            Position::MovePercent(percent) => pixel_y += percent * resolution.height as f32,
+            Position::MovePixels(pixels) => pixel_y += *pixels as f32,
+            Position::MovePercentRelative(percent) => pixel_y += height * percent,
+        });
         return (pixel_x, pixel_y);
     }
 }
 
 #[derive(Debug)]
 pub enum Position {
-    Default,
-    Point(u32),
-    PointFromEnd(u32),
-    Percent(f32),
-    Center,
+    Start,
     End,
+    Center,
+    Point(i32),
+    Percent(f32),
+    MovePercent(f32),
+    MovePixels(i32),
+    MovePercentRelative(f32),
 }
 
 #[derive(Debug)]
