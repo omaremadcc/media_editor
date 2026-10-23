@@ -1,6 +1,5 @@
 use crate::graphic::{Graphic, GraphicType};
 use crate::image::Image;
-use crate::svg::svg_to_path;
 use crate::utils::scaled_pixel_color;
 use crate::{Pixel, Resolution};
 
@@ -204,7 +203,6 @@ impl Canvas {
                 ),
                 Element::SVG(SVGData { elements, .. }) => {
                     for graphic in elements {
-                        dbg!(graphic);
                         graphic.graphic_type.render(
                             graphic.stroke_width,
                             graphic.stroke_color,
@@ -263,27 +261,6 @@ impl Canvas {
         return self.current_layer_id - 1;
     }
 
-    pub fn add_svg_path(
-        &mut self,
-        path: &str,
-        stroke_width: usize,
-        stroke_color: Option<u32>,
-        fill_color: Option<u32>,
-    ) -> usize {
-        let commands = svg_to_path(path).unwrap();
-        let layer = Layer::from_element(
-            Element::Graphic(Graphic {
-                graphic_type: GraphicType::Path { commands },
-                stroke_width,
-                stroke_color,
-                fill_color,
-            }),
-            self.current_layer_id,
-        );
-        self.add_layer(layer);
-        return self.current_layer_id - 1;
-    }
-
     pub fn add_text(
         &mut self,
         text: String,
@@ -292,19 +269,13 @@ impl Canvas {
         stroke_color: Option<u32>,
         fill_color: Option<u32>,
     ) -> usize {
-        let layer = Layer {
-            id: self.current_layer_id,
-            scale: 1.,
-            opacity: 1.,
-            position: LayerPosition::default(),
-            adjustments_stack: Vec::new(),
-            element: Element::Graphic(Graphic {
-                graphic_type: GraphicType::Text { size, text },
-                stroke_width,
-                stroke_color,
-                fill_color,
-            }),
-        };
+        let element = Element::Graphic(Graphic {
+            graphic_type: GraphicType::Text { size, text },
+            stroke_width,
+            stroke_color,
+            fill_color,
+        });
+        let layer = Layer::from_element(element, self.current_layer_id);
         self.add_layer(layer);
         return self.current_layer_id - 1;
     }
@@ -327,6 +298,13 @@ impl Canvas {
         );
         self.add_layer(layer);
 
+        return self.current_layer_id - 1;
+    }
+
+    pub fn read_svg_from_path(&mut self, path: &str) -> usize {
+        let svg_data = read_svg_from_path(path).unwrap();
+        let element = Element::SVG(svg_data);
+        self.add_layer(Layer::from_element(element, self.current_layer_id));
         return self.current_layer_id - 1;
     }
 
@@ -511,7 +489,7 @@ pub enum Position {
     End,
 }
 
-use crate::formats::svg::SVGData;
+use crate::formats::svg::{SVGData, read_svg_from_path};
 
 #[derive(Debug)]
 pub enum Element {
