@@ -18,7 +18,7 @@ impl Canvas {
             final_image: &mut Image,
             canvas_resolution: &Resolution,
         ) {
-            if y > canvas_resolution.height as usize || x > canvas_resolution.width as usize {
+            if y >= canvas_resolution.height as usize || x >= canvas_resolution.width as usize {
                 return;
             }
             let index = base_index.unwrap_or(0) + y * canvas_resolution.width as usize + x;
@@ -29,7 +29,6 @@ impl Canvas {
             {
                 if pixel.a != 255 && !final_image.pixels[index].is_empty() {
                     final_image.pixels[index] = final_image.pixels[index].merge_with(&pixel);
-                    // final_image.pixels[index] = pixel;
                 } else {
                     final_image.pixels[index] = pixel;
                 }
@@ -42,6 +41,7 @@ impl Canvas {
             (x1, y1): (usize, usize),
             width: usize,
             stroke_color: u32,
+            opacity: f32,
             final_image: &mut Image,
             canvas_resolution: &Resolution,
         ) {
@@ -75,11 +75,13 @@ impl Canvas {
                         let ddx = px as f64 - x0 as f64;
                         let ddy = py as f64 - y0 as f64;
 
+                        let mut pixel = Pixel::from_hex(stroke_color);
+                        pixel.a = (255f32 * opacity) as u8;
                         if ddx * ddx + ddy * ddy <= radius_squared {
                             plot_pixel(
                                 px as usize,
                                 py as usize,
-                                Pixel::from_hex(stroke_color),
+                                pixel,
                                 None,
                                 final_image,
                                 canvas_resolution,
@@ -162,6 +164,7 @@ impl Canvas {
                     graphic.fill_color,
                     &layer.position,
                     layer.scale,
+                    layer.opacity,
                     &mut final_image,
                     &self.resolution,
                     straight_line_from_to,
@@ -175,6 +178,7 @@ impl Canvas {
                             graphic.fill_color,
                             &layer.position,
                             layer.scale,
+                            layer.opacity,
                             &mut final_image,
                             &self.resolution,
                             straight_line_from_to,

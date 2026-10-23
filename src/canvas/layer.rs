@@ -57,6 +57,12 @@ pub struct Layer {
 }
 
 impl Layer {
+    pub fn set_opacity(&mut self, opacity: f32) {
+        self.opacity = opacity;
+    }
+    pub fn set_scale(&mut self, scale: f32) {
+        self.scale = scale;
+    }
     pub fn set_x_position_end(&mut self) {
         self.position.x = vec![Position::End]
     }

@@ -35,7 +35,8 @@ use crate::utils::distance_between_point_and_line;
 use crate::{Pixel, Resolution};
 use ttf_parser::Face;
 
-type StraightLineFromToFn = fn((usize, usize), (usize, usize), usize, u32, &mut Image, &Resolution);
+type StraightLineFromToFn =
+    fn((usize, usize), (usize, usize), usize, u32, f32, &mut Image, &Resolution);
 type PlotPixelFn = fn(usize, usize, Pixel, Option<usize>, &mut Image, &Resolution);
 
 impl GraphicType {
@@ -46,6 +47,7 @@ impl GraphicType {
         fill_color: Option<u32>,
         position: &LayerPosition,
         scale: f32,
+        opacity: f32,
         final_image: &mut Image,
         resolution: &Resolution,
         straight_line_from_to: StraightLineFromToFn,
@@ -65,6 +67,7 @@ impl GraphicType {
                     fill_color,
                     position,
                     scale,
+                    opacity,
                     final_image,
                     resolution,
                     straight_line_from_to,
@@ -96,6 +99,7 @@ impl GraphicType {
                     fill_color,
                     position,
                     scale,
+                    opacity,
                     final_image,
                     resolution,
                     straight_line_from_to,
@@ -281,6 +285,7 @@ impl GraphicType {
                     fill_color,
                     position,
                     scale,
+                    opacity,
                     final_image,
                     resolution,
                     straight_line_from_to,
@@ -347,6 +352,7 @@ impl GraphicType {
                     fill_color,
                     position,
                     scale,
+                    opacity,
                     final_image,
                     resolution,
                     straight_line_from_to,
@@ -397,6 +403,7 @@ impl GraphicType {
                     fill_color,
                     position,
                     scale,
+                    opacity,
                     final_image,
                     resolution,
                     straight_line_from_to,
@@ -575,6 +582,7 @@ fn render_edges(
     fill_color: Option<u32>,
     position: &LayerPosition,
     scale: f32,
+    opacity: f32,
     mut final_image: &mut Image,
     resolution: &Resolution,
     straight_line_from_to: StraightLineFromToFn,
@@ -662,11 +670,13 @@ fn render_edges(
                 let start_x = (left - 0.5).ceil() as i32;
                 let end_x = (right - 0.5).ceil() as i32;
 
+                let mut pixel = Pixel::from_hex(fill_color);
+                pixel.a = (255f32 * opacity) as u8;
                 for x in start_x..end_x {
                     plot_pixel(
                         x as usize,
                         y as usize,
-                        Pixel::from_hex(fill_color),
+                        pixel,
                         None,
                         &mut final_image,
                         resolution,
@@ -684,6 +694,7 @@ fn render_edges(
                 (edge.1.0 as usize, edge.1.1 as usize),
                 stroke_width as usize,
                 stroke_color,
+                opacity,
                 &mut final_image,
                 resolution,
             );
