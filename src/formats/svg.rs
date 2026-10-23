@@ -30,11 +30,8 @@ pub fn read_svg_from_path(path: &str) -> Result<SVGData, Error> {
     );
     svg_data.viewbox = viewbox_tuple;
 
-    println!("viewBox: {viewbox}");
-
     for node in root.descendants().filter(|n| n.is_element()) {
         let tag = node.tag_name().name();
-        println!("{tag}");
 
         match tag {
             "path" => {

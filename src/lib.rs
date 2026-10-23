@@ -4,7 +4,6 @@ pub mod formats;
 pub mod graphic;
 pub mod image;
 pub mod resolutions;
-pub mod svg;
 pub mod text;
 pub mod utils;
 
