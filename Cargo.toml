@@ -13,3 +13,7 @@ ttf-parser = "0.25.1"
 [[bin]]
 name = "main"
 path = "src/bin/main.rs"
+
+[[bin]]
+name = "test1"
+path = "src/bin/test1.rs"

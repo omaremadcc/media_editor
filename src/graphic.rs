@@ -293,7 +293,7 @@ impl GraphicType {
                 );
             }
             GraphicType::Text { size, text } => {
-                let font_data = std::fs::read("mono.ttf").unwrap();
+                let font_data = std::fs::read("monobld.ttf").unwrap();
                 let mut line_height = 0f32;
                 let mut current_x = 0f32;
                 let mut current_y = 0f32;

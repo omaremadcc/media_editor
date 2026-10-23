@@ -1,10 +1,11 @@
 #![allow(unused)]
-use images_editor::{Resolution, canvas::Canvas};
+use images_editor::{Resolution, canvas::Canvas, colors::Colors};
 
 fn main() -> () {
-    let mut canvas = Canvas::new(1000, 1000);
-    canvas.add_image_from_png("png.png");
-    canvas.read_svg_from_path("bird.svg");
+    let mut canvas = Canvas::new(4000, 4000);
+
+    let rect = canvas.add_rectangle(400, 400, 0, None, Colors::red());
+    canvas.export_to_png("output16", true);
 
     return ();
 }
