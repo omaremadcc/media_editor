@@ -4,7 +4,13 @@ use crate::{Pixel, Resolution};
 use std::io::Error;
 
 impl Image {
-    pub fn read_from_bmp(buffer: &[u8]) -> Result<Self, Error> {
+    pub fn read_from_bmp_path(path: &str) -> Result<Self, Error> {
+        let buffer = std::fs::read(path)?;
+        Self::read_from_bmp_buffer(&buffer)
+    }
+
+    /// Reads a BMP image from a buffer (byte array)
+    pub fn read_from_bmp_buffer(buffer: &[u8]) -> Result<Self, Error> {
         let pixel_offset = u32::from_le_bytes(buffer[10..14].try_into().unwrap()) as usize;
         let width = u32::from_le_bytes(buffer[18..22].try_into().unwrap()) as usize;
         let height = u32::from_le_bytes(buffer[22..26].try_into().unwrap()) as usize;

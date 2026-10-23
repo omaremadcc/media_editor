@@ -310,6 +310,20 @@ impl Canvas {
         return self.current_layer_id - 1;
     }
 
+    pub fn add_image_from_png(&mut self, path: &str) -> Result<usize, Error> {
+        let image = Image::read_from_png_path(path)?;
+        let element = Element::Image(image);
+        self.add_layer(Layer::from_element(element, self.current_layer_id));
+        return Ok(self.current_layer_id - 1);
+    }
+
+    pub fn add_image_from_bmp(&mut self, path: &str) -> Result<usize, Error> {
+        let image = Image::read_from_bmp_path(path)?;
+        let element = Element::Image(image);
+        self.add_layer(Layer::from_element(element, self.current_layer_id));
+        return Ok(self.current_layer_id - 1);
+    }
+
     pub fn export_to_png(&self, path: &str) -> Result<(), Error> {
         let image = self.to_image();
         image.write_to_png(path, true)

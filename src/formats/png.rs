@@ -7,7 +7,12 @@ use flate2::write::ZlibEncoder;
 use std::io::{Error, Read, Write};
 
 impl Image {
-    pub fn read_from_png(buffer: &[u8]) -> Result<Self, Error> {
+    pub fn read_from_png_path(path: &str) -> Result<Self, Error> {
+        let buffer = std::fs::read(path)?;
+        Self::read_from_png_buffer(&buffer)
+    }
+
+    pub fn read_from_png_buffer(buffer: &[u8]) -> Result<Self, Error> {
         let signature = &buffer[..8];
         if signature != &[137, 80, 78, 71, 13, 10, 26, 10] {
             return Err(Error::new(
