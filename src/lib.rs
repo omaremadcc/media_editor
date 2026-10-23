@@ -19,18 +19,18 @@ impl Resolution {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Pixel {
+pub(crate) struct Pixel {
     pub r: u8,
     pub g: u8,
     pub b: u8,
     pub a: u8,
 }
 impl Pixel {
-    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
+    pub(crate) fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
     }
 
-    pub fn empty() -> Self {
+    pub(crate) fn empty() -> Self {
         Self {
             r: 0,
             g: 0,
@@ -39,7 +39,7 @@ impl Pixel {
         }
     }
 
-    pub fn from_hex(hex: u32) -> Self {
+    pub(crate) fn from_hex(hex: u32) -> Self {
         Self {
             r: ((hex >> 16) & 0xFF) as u8,
             g: ((hex >> 8) & 0xFF) as u8,
@@ -48,35 +48,35 @@ impl Pixel {
         }
     }
 
-    pub fn to_bgr(&self) -> [u8; 3] {
+    pub(crate) fn to_bgr(&self) -> [u8; 3] {
         [self.b, self.g, self.r]
     }
 
-    pub fn to_bgra(&self) -> [u8; 4] {
+    pub(crate) fn to_bgra(&self) -> [u8; 4] {
         [self.b, self.g, self.r, self.a]
     }
 
-    pub fn to_hex(&self) -> u32 {
+    pub(crate) fn _to_hex(&self) -> u32 {
         ((self.r as u32) << 16) | ((self.g as u32) << 8) | (self.b as u32)
     }
 
-    pub fn normalize(&self) -> f32 {
+    pub(crate) fn _normalize(&self) -> f32 {
         ((self.r as f32) / 255.0 + (self.g as f32) / 255.0 + (self.b as f32) / 255.0) / 3.0
     }
 
-    pub fn change_exposure(&mut self, factor: f32) {
+    pub(crate) fn change_exposure(&mut self, factor: f32) {
         self.r = adjust_pixel_channel_exposure(self.r, factor);
         self.g = adjust_pixel_channel_exposure(self.g, factor);
         self.b = adjust_pixel_channel_exposure(self.b, factor);
     }
 
-    pub fn change_brightness(&mut self, factor: f32) {
+    pub(crate) fn change_brightness(&mut self, factor: f32) {
         self.r = adjust_pixel_channel_brightness(self.r, factor);
         self.g = adjust_pixel_channel_brightness(self.g, factor);
         self.b = adjust_pixel_channel_brightness(self.b, factor);
     }
 
-    pub fn to_hsv(&self) -> (f32, f32, f32) {
+    pub(crate) fn to_hsv(&self) -> (f32, f32, f32) {
         let r = self.r as f32 / 255.0;
         let g = self.g as f32 / 255.0;
         let b = self.b as f32 / 255.0;
@@ -108,7 +108,7 @@ impl Pixel {
         (h, s, v)
     }
 
-    pub fn shift_hue(&mut self, degree: f32) {
+    pub(crate) fn _shift_hue(&mut self, degree: f32) {
         let hsv = self.to_hsv();
         let mut h = (hsv.0 + degree) % 360.0;
         if h < 0.0 {
@@ -123,7 +123,7 @@ impl Pixel {
         self.b = b;
     }
 
-    pub fn change_saturation(&mut self, degree: f32) {
+    pub(crate) fn change_saturation(&mut self, degree: f32) {
         let (h, s, v) = self.to_hsv();
 
         let new_s = (s * (degree / 100.0)).clamp(0.0, 1.0);
@@ -134,7 +134,7 @@ impl Pixel {
         self.b = b;
     }
 
-    pub fn merge_with(&self, pixel: &Pixel) -> Pixel {
+    pub(crate) fn merge_with(&self, pixel: &Pixel) -> Pixel {
         // Background pixel as self
 
         let a_bg = self.a;
@@ -167,7 +167,7 @@ impl Pixel {
         return Pixel::new(result_red, result_green, result_blue, alpha_result);
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.a == 0
     }
 }
@@ -235,9 +235,4 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (u8, u8, u8) {
     let b = ((res.2 + m) * 255.0).round().clamp(0.0, 255.0) as u8;
 
     return (r, g, b);
-}
-
-pub struct Point {
-    pub x: u32,
-    pub y: u32,
 }

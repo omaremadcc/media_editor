@@ -1,13 +1,13 @@
 #[derive(Debug)]
-pub struct Graphic {
-    pub graphic_type: GraphicType,
-    pub stroke_width: usize,
-    pub stroke_color: Option<u32>,
-    pub fill_color: Option<u32>,
+pub(crate) struct Graphic {
+    pub(crate) graphic_type: GraphicType,
+    pub(crate) stroke_width: usize,
+    pub(crate) stroke_color: Option<u32>,
+    pub(crate) fill_color: Option<u32>,
 }
 
 #[derive(Debug)]
-pub enum GraphicType {
+pub(crate) enum GraphicType {
     Line {
         start: (usize, usize),
         end: (usize, usize),
@@ -34,11 +34,12 @@ use crate::text::GlyphPath;
 use crate::utils::distance_between_point_and_line;
 use crate::{Pixel, Resolution};
 use ttf_parser::Face;
+
 type StraightLineFromToFn = fn((usize, usize), (usize, usize), usize, u32, &mut Image, &Resolution);
 type PlotPixelFn = fn(usize, usize, Pixel, Option<usize>, &mut Image, &Resolution);
 
 impl GraphicType {
-    pub fn render(
+    pub(crate) fn render(
         &self,
         stroke_width: usize,
         stroke_color: Option<u32>,
@@ -406,7 +407,7 @@ impl GraphicType {
     }
 }
 
-pub fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
+fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
     let mut edges: Vec<((f32, f32), (f32, f32))> = vec![];
     let mut current_point = (0f32, 0f32);
     let mut most_recent_move = (0f32, 0f32);
@@ -567,7 +568,7 @@ pub fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))
     return edges;
 }
 
-pub fn render_edges(
+fn render_edges(
     edges: Vec<((f32, f32), (f32, f32))>,
     stroke_width: usize,
     stroke_color: Option<u32>,
@@ -705,7 +706,7 @@ fn extract_glyph(font_data: &[u8], character: char) -> Option<(GlyphPath, f32, f
 }
 
 #[derive(Debug)]
-pub enum PathCommand {
+pub(crate) enum PathCommand {
     MoveTo((f32, f32)),
     LineTo((f32, f32)),
     QuadraticTo((f32, f32), (f32, f32)),

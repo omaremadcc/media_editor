@@ -7,7 +7,5 @@ fn main() -> () {
     canvas.add_image_from_png("png.png");
     canvas.read_svg_from_path("bird.svg");
 
-    canvas.to_image().write_to_png("output16.png", true);
-
     return ();
 }

@@ -48,12 +48,12 @@ impl Canvas {
 
 #[derive(Debug)]
 pub struct Layer {
-    pub id: usize,
-    pub element: Element,
-    pub position: LayerPosition,
-    pub scale: f32,
-    pub opacity: f32,
-    pub adjustments_stack: Vec<Adjustment>,
+    pub(crate) id: usize,
+    pub(crate) element: Element,
+    pub(crate) position: LayerPosition,
+    pub(crate) scale: f32,
+    pub(crate) opacity: f32,
+    pub(crate) adjustments_stack: Vec<Adjustment>,
 }
 
 impl Layer {
@@ -118,7 +118,7 @@ impl Layer {
         self.adjustments_stack.push(Adjustment::FlipVertical);
     }
 
-    pub fn from_element(element: Element, id: usize) -> Self {
+    pub(crate) fn from_element(element: Element, id: usize) -> Self {
         Self {
             element,
             position: LayerPosition::default(),

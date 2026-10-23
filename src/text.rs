@@ -1,8 +1,8 @@
 use crate::graphic::PathCommand;
 use ttf_parser::OutlineBuilder;
 
-pub struct GlyphPath {
-    pub commands: Vec<PathCommand>,
+pub(crate) struct GlyphPath {
+    pub(crate) commands: Vec<PathCommand>,
 }
 impl GlyphPath {
     pub fn new() -> Self {

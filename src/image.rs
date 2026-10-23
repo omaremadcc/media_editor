@@ -3,9 +3,9 @@ use crate::Resolution;
 use crate::canvas::Adjustment;
 
 #[derive(Debug, Clone)]
-pub struct Image {
-    pub pixels: Vec<Pixel>,
-    pub resolution: Resolution,
+pub(crate) struct Image {
+    pub(crate) pixels: Vec<Pixel>,
+    pub(crate) resolution: Resolution,
 }
 
 impl Image {
@@ -23,19 +23,19 @@ impl Image {
             pixel.change_brightness(factor);
         });
     }
-    pub fn change_hue(&mut self, factor: f32) {
+    pub(crate) fn _change_hue(&mut self, factor: f32) {
         self.pixels.iter_mut().for_each(|pixel| {
-            pixel.shift_hue(factor);
+            pixel._shift_hue(factor);
         });
     }
 
-    pub fn change_saturation(&mut self, factor: f32) {
+    pub(crate) fn change_saturation(&mut self, factor: f32) {
         self.pixels.iter_mut().for_each(|pixel| {
             pixel.change_saturation(factor);
         });
     }
 
-    pub fn rotate_image_to_right(&mut self) {
+    pub(crate) fn rotate_image_to_right(&mut self) {
         let height = self.resolution.height;
         let width = self.resolution.width;
         let mut new_pixels = Vec::new();
@@ -52,7 +52,7 @@ impl Image {
         self.pixels = new_pixels;
     }
 
-    pub fn rotate_image_to_left(&mut self) {
+    pub(crate) fn rotate_image_to_left(&mut self) {
         let height = self.resolution.height;
         let width = self.resolution.width;
         let mut new_pixels = Vec::new();
@@ -69,7 +69,7 @@ impl Image {
         self.pixels = new_pixels;
     }
 
-    pub fn mirror_image_vertically(&mut self) {
+    pub(crate) fn mirror_image_vertically(&mut self) {
         let mut new_pixels = Vec::new();
 
         for row in 0..self.resolution.height {
@@ -82,7 +82,7 @@ impl Image {
         self.pixels = new_pixels;
     }
 
-    pub fn mirror_image_horizontally(&mut self) {
+    pub(crate) fn mirror_image_horizontally(&mut self) {
         let mut new_pixels = Vec::new();
 
         for row in 0..self.resolution.height {
@@ -95,7 +95,7 @@ impl Image {
         self.pixels = new_pixels;
     }
 
-    pub fn apply_adjustments(&mut self, adjustments: &Vec<Adjustment>) {
+    pub(crate) fn apply_adjustments(&mut self, adjustments: &Vec<Adjustment>) {
         for adjustment in adjustments {
             match adjustment {
                 Adjustment::Exposure(exposure) => {

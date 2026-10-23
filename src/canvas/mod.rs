@@ -5,7 +5,7 @@ mod layer;
 mod render;
 mod shapes;
 
-pub use element::Element;
+pub(crate) use element::Element;
 pub use layer::{Adjustment, Layer, LayerPosition};
 
 use crate::Resolution;

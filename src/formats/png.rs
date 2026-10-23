@@ -1,5 +1,4 @@
 use crate::image::Image;
-use crate::utils;
 use crate::{Pixel, Resolution};
 use flate2::Compression;
 use flate2::read::ZlibDecoder;
@@ -7,12 +6,12 @@ use flate2::write::ZlibEncoder;
 use std::io::{Error, Read, Write};
 
 impl Image {
-    pub fn read_from_png_path(path: &str) -> Result<Self, Error> {
+    pub(crate) fn read_from_png_path(path: &str) -> Result<Self, Error> {
         let buffer = std::fs::read(path)?;
         Self::read_from_png_buffer(&buffer)
     }
 
-    pub fn read_from_png_buffer(buffer: &[u8]) -> Result<Self, Error> {
+    fn read_from_png_buffer(buffer: &[u8]) -> Result<Self, Error> {
         let signature = &buffer[..8];
         if signature != &[137, 80, 78, 71, 13, 10, 26, 10] {
             return Err(Error::new(
@@ -21,8 +20,9 @@ impl Image {
             ));
         }
 
-        let width = utils::calculate_big_endian(&buffer[16..20]);
-        let height = utils::calculate_big_endian(&buffer[20..24]);
+        let width = u32::from_be_bytes(buffer[16..20].try_into().unwrap());
+
+        let height = u32::from_be_bytes(buffer[20..24].try_into().unwrap());
         let bit_depth = buffer[24];
         let color_type = buffer[25];
         let number_of_channels = match color_type {
@@ -43,7 +43,7 @@ impl Image {
 
         let mut index = 33;
         loop {
-            let chunk_length = utils::calculate_big_endian(&buffer[index..index + 4]);
+            let chunk_length = u32::from_be_bytes(buffer[index..index + 4].try_into().unwrap());
             let chunk_type = &buffer[(index + 4)..(index + 8)];
 
             if chunk_type == b"IEND" {

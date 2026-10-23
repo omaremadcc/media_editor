@@ -1,10 +1,10 @@
 #[derive(Debug)]
-pub struct SVGData {
+pub(crate) struct SVGData {
     pub viewbox: (f32, f32, f32, f32),
     pub elements: Vec<Graphic>,
 }
 
-pub fn read_svg_from_path(path: &str) -> Result<SVGData, Error> {
+pub(crate) fn read_svg_from_path(path: &str) -> Result<SVGData, Error> {
     let mut svg_data = SVGData {
         viewbox: (0., 0., 0., 0.),
         elements: Vec::new(),
@@ -277,13 +277,13 @@ use crate::{
     utils::string_hex_to_u32,
 };
 #[derive(Debug)]
-pub struct PathCommandRaw {
+struct PathCommandRaw {
     pub command: char,
     pub values: Vec<f64>,
 }
 
 #[derive(Debug, Default)]
-pub struct SeparatorCounts {
+struct SeparatorCounts {
     commas: usize,
     spaces: usize,
     tabs: usize,
@@ -376,7 +376,7 @@ fn parse_number(bytes: &[u8], i: &mut usize) -> Result<f64, String> {
 }
 
 // THIS FUNCTION WAS WRITTING BY AI
-pub fn parse_svg_path(data: &str) -> Result<(Vec<PathCommandRaw>, SeparatorCounts), String> {
+fn parse_svg_path(data: &str) -> Result<(Vec<PathCommandRaw>, SeparatorCounts), String> {
     let bytes = data.as_bytes();
     let mut i = 000;
 
@@ -513,7 +513,7 @@ pub fn parse_svg_path(data: &str) -> Result<(Vec<PathCommandRaw>, SeparatorCount
     Ok((commands, separators))
 }
 
-pub fn svg_to_path(data: &str) -> Result<Vec<PathCommand>, String> {
+fn svg_to_path(data: &str) -> Result<Vec<PathCommand>, String> {
     let svg_commands = parse_svg_path(data)?.0;
 
     let mut path_commands = Vec::new();

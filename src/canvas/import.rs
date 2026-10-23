@@ -4,7 +4,7 @@ use crate::image::Image;
 use std::io::Error;
 
 impl Canvas {
-    pub fn add_image(&mut self, image: Image) -> usize {
+    pub(crate) fn _add_image(&mut self, image: Image) -> usize {
         if self.resolution.width < image.resolution.width {
             self.resolution.width = image.resolution.width;
         }

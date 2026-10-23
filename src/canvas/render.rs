@@ -5,7 +5,7 @@ use crate::utils::scaled_pixel_color;
 use crate::{Pixel, Resolution};
 
 impl Canvas {
-    pub fn to_image(&self) -> Image {
+    pub(crate) fn to_image(&self) -> Image {
         let num_pixels = self.resolution.width as usize * self.resolution.height as usize;
         let empty_pixels = vec![Pixel::empty(); num_pixels];
         let mut final_image = Image::new(empty_pixels, self.resolution.clone());
