@@ -1,3 +1,5 @@
+use std::io::Error;
+
 use crate::graphic::{Graphic, GraphicType};
 use crate::image::Image;
 use crate::utils::scaled_pixel_color;
@@ -306,6 +308,16 @@ impl Canvas {
         let element = Element::SVG(svg_data);
         self.add_layer(Layer::from_element(element, self.current_layer_id));
         return self.current_layer_id - 1;
+    }
+
+    pub fn export_to_png(&self, path: &str) -> Result<(), Error> {
+        let image = self.to_image();
+        image.write_to_png(path, true)
+    }
+
+    pub fn export_to_bmp(&self, path: &str) -> Result<(), Error> {
+        let image = self.to_image();
+        image.write_to_bmp(path, true)
     }
 
     pub fn bring_layer_to_front(&mut self, layer_id: usize) {
