@@ -9,8 +9,9 @@ impl Canvas {
         x1: usize,
         y1: usize,
         width: usize,
-        stroke_color: Option<u32>,
+        stroke_color: impl Into<Option<u32>>,
     ) -> usize {
+        let stroke_color = stroke_color.into();
         let element = Element::Graphic(Graphic {
             graphic_type: GraphicType::Line {
                 start: (x0, y0),
@@ -28,9 +29,11 @@ impl Canvas {
         width: usize,
         height: usize,
         stroke_width: usize,
-        stroke_color: Option<u32>,
-        fill_color: Option<u32>,
+        stroke_color: impl Into<Option<u32>>,
+        fill_color: impl Into<Option<u32>>,
     ) -> usize {
+        let stroke_color = stroke_color.into();
+        let fill_color = fill_color.into();
         let element = Element::Graphic(Graphic {
             graphic_type: GraphicType::Rectangle { width, height },
             stroke_width,
@@ -46,14 +49,14 @@ impl Canvas {
         text: String,
         size: usize,
         stroke_width: usize,
-        stroke_color: Option<u32>,
-        fill_color: Option<u32>,
+        stroke_color: impl Into<Option<u32>>,
+        fill_color: impl Into<Option<u32>>,
     ) -> usize {
         let element = Element::Graphic(Graphic {
             graphic_type: GraphicType::Text { size, text },
             stroke_width,
-            stroke_color,
-            fill_color,
+            stroke_color: stroke_color.into(),
+            fill_color: fill_color.into(),
         });
         let layer = Layer::from_element(element, self.current_layer_id);
         self.add_layer(layer);
@@ -64,15 +67,15 @@ impl Canvas {
         &mut self,
         radius: f32,
         stroke_width: usize,
-        stroke_color: Option<u32>,
-        fill_color: Option<u32>,
+        stroke_color: impl Into<Option<u32>>,
+        fill_color: impl Into<Option<u32>>,
     ) -> usize {
         let layer = Layer::from_element(
             Element::Graphic(Graphic {
                 graphic_type: GraphicType::Circle { radius },
                 stroke_width,
-                stroke_color,
-                fill_color,
+                stroke_color: stroke_color.into(),
+                fill_color: fill_color.into(),
             }),
             self.current_layer_id,
         );
