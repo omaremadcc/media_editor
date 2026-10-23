@@ -1,10 +1,5 @@
 #![allow(unused)]
-use images_editor::{
-    Resolution,
-    canvas::{Canvas, Layer, Position},
-    colors::Colors,
-    image::Image,
-};
+use images_editor::{Resolution, canvas::Canvas};
 use std::fs;
 
 fn main() -> () {
