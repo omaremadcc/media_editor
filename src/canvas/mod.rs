@@ -17,10 +17,10 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    pub fn new(resolution: Resolution) -> Self {
+    pub fn new(height: usize, width: usize) -> Self {
         Self {
             layers: Vec::new(),
-            resolution,
+            resolution: Resolution::new(height, width),
             current_layer_id: 0,
         }
     }
