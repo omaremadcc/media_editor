@@ -15,6 +15,7 @@ pub(crate) enum GraphicType {
     Rectangle {
         width: usize,
         height: usize,
+        border_radius: f32,
     },
     Path {
         commands: Vec<PathCommand>,
@@ -29,6 +30,7 @@ pub(crate) enum GraphicType {
 }
 
 use crate::canvas::LayerPosition;
+use crate::graphic::PathCommand::MoveTo;
 use crate::image::Image;
 use crate::text::GlyphPath;
 use crate::utils::distance_between_point_and_line;
@@ -74,24 +76,37 @@ impl GraphicType {
                     plot_pixel,
                 );
             }
-            GraphicType::Rectangle { width, height } => {
-                let (x, y) = (0, 0);
-                let edges = vec![
+            GraphicType::Rectangle {
+                width,
+                height,
+                border_radius,
+            } => {
+                let mut edges = vec![];
+                let r = *border_radius;
+                let w = *width as f32;
+                let h = *height as f32;
+                let commands = vec![
+                    MoveTo((r, 0.)),
                     // Top
-                    ((x as f32, y as f32), (x as f32 + *width as f32, y as f32)),
+                    PathCommand::LineTo((w - r, 0.)),
+                    // Top right
+                    PathCommand::QuadraticTo((w, r), (w, 0.)),
                     // Right
-                    (
-                        (x as f32 + *width as f32, y as f32),
-                        (x as f32 + *width as f32, y as f32 + *height as f32),
-                    ),
+                    PathCommand::LineTo((w, h - r)),
+                    // Bottom Right
+                    PathCommand::QuadraticTo((w - r, h), (w, h)),
                     // Bottom
-                    (
-                        (x as f32 + *width as f32, y as f32 + *height as f32),
-                        (x as f32, y as f32 + *height as f32),
-                    ),
+                    PathCommand::LineTo((r, h)),
+                    // Bottom Left
+                    PathCommand::QuadraticTo((0., h - r), (0., h)),
                     // Left
-                    ((x as f32, y as f32 + *height as f32), (x as f32, y as f32)),
+                    PathCommand::LineTo((0., r)),
+                    // Top Left
+                    PathCommand::QuadraticTo((r, 0.), (0., 0.)),
+                    PathCommand::Close,
                 ];
+                edges = path_to_edges(commands);
+
                 render_edges(
                     edges,
                     stroke_width,

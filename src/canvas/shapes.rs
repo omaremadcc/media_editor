@@ -31,11 +31,16 @@ impl Canvas {
         stroke_width: usize,
         stroke_color: impl Into<Option<u32>>,
         fill_color: impl Into<Option<u32>>,
+        border_radius: f32,
     ) -> usize {
         let stroke_color = stroke_color.into();
         let fill_color = fill_color.into();
         let element = Element::Graphic(Graphic {
-            graphic_type: GraphicType::Rectangle { width, height },
+            graphic_type: GraphicType::Rectangle {
+                width,
+                height,
+                border_radius: border_radius.into(),
+            },
             stroke_width,
             stroke_color,
             fill_color,

@@ -3,7 +3,7 @@ use images_editor::{canvas::Canvas, colors::Colors};
 fn main() {
     let mut canvas = Canvas::new(3840, 2924);
 
-    canvas.add_rectangle(3840, 2924, 0, None, Colors::yellow());
+    canvas.add_rectangle(3840, 2924, 0, None, Colors::yellow(), 0f32);
 
     for (i, fill_color) in [
         Colors::white(),
@@ -20,12 +20,12 @@ fn main() {
     {
         let width = (3840 - 50) / 8;
         let padding = width * i + 25;
-        let rect = canvas.add_rectangle(width, 1300, 0, None, *fill_color);
+        let rect = canvas.add_rectangle(width, 1300, 0, None, *fill_color, 0f32);
         canvas.get_mut_layer(rect).move_to_point_y(25);
         canvas.get_mut_layer(rect).move_to_point_x(padding as i32);
     }
 
-    let rectangle1 = canvas.add_rectangle(3840 - 50, 1300, 20, Colors::black(), None);
+    let rectangle1 = canvas.add_rectangle(3840 - 50, 1300, 20, Colors::black(), None, 0f32);
     let layer = canvas.get_mut_layer(rectangle1);
     layer.move_to_point_y(25);
     layer.center_layer_x();
@@ -45,7 +45,14 @@ fn main() {
         let side = (3840 - 50 - 11 * 50) / 11;
         let padding_y = 1400;
         let padding_x = 25 + (side + 50) * i as i32;
-        let rect = canvas.add_rectangle(side as usize, side as usize, 0, None, Colors::black());
+        let rect = canvas.add_rectangle(
+            side as usize,
+            side as usize,
+            5,
+            Colors::white(),
+            Colors::black(),
+            0f32,
+        );
         canvas.get_mut_layer(rect).move_to_point_y(padding_y);
         canvas.get_mut_layer(rect).move_to_point_x(padding_x);
         canvas
