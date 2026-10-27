@@ -2,7 +2,7 @@ use crate::Resolution;
 use crate::canvas::{Canvas, Element};
 
 impl Canvas {
-    pub fn add_layer(&mut self, layer: Layer) {
+    pub(crate) fn add_layer(&mut self, layer: Layer) {
         self.layers.push(layer);
         self.current_layer_id += 1;
     }

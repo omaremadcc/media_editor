@@ -1,11 +1,11 @@
 pub mod canvas;
 pub mod colors;
-pub mod formats;
-pub mod graphic;
-pub mod image;
+mod formats;
+mod graphic;
+mod image;
 pub mod resolutions;
-pub mod text;
-pub mod utils;
+mod text;
+mod utils;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Resolution {

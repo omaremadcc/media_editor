@@ -1,7 +1,7 @@
 mod element;
 mod export;
 mod import;
-mod layer;
+pub mod layer;
 mod render;
 mod shapes;
 
@@ -10,9 +10,10 @@ pub use layer::{Adjustment, Layer, LayerPosition};
 
 use crate::Resolution;
 
+/// The main struct that holds all the layers and the resolution of the canvas.
 pub struct Canvas {
-    pub layers: Vec<Layer>,
-    pub resolution: Resolution,
+    layers: Vec<Layer>,
+    resolution: Resolution,
     current_layer_id: usize,
 }
 
@@ -23,5 +24,8 @@ impl Canvas {
             resolution: Resolution::new(height, width),
             current_layer_id: 0,
         }
+    }
+    pub fn resolution(&self) -> (usize, usize) {
+        return (self.resolution.width, self.resolution.height);
     }
 }
