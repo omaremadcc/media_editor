@@ -458,7 +458,7 @@ fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
                 ) {
                     let distance_between_anchor_and_line =
                         distance_between_point_and_ray((anchor_x, anchor_y), (x0, y0), (x1, y1));
-                    if distance_between_anchor_and_line < 0.1 || depth == 10 {
+                    if distance_between_anchor_and_line < 0.0001 || depth == 10 {
                         edges.push(((x0, y0), (x1, y1)));
                         return;
                     }
@@ -520,7 +520,7 @@ fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
                     edges: &mut Vec<((f32, f32), (f32, f32))>,
                 ) {
                     let max_depth = 5;
-                    let tolerance = 0.1;
+                    let tolerance = 0.0001;
 
                     let distance_1 = distance_between_point_and_ray((ax1, ay1), (x0, y0), (x1, y1));
                     let distance_2 = distance_between_point_and_ray((ax2, ay2), (x0, y0), (x1, y1));

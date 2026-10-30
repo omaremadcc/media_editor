@@ -26,9 +26,5 @@ path = "src/bin/test2.rs"
 name = "test3"
 path = "src/bin/test3.rs"
 
-[[bin]]
-name = "test4"
-path = "src/bin/test4.rs"
-
 [profile.release]
 debug = true
