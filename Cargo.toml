@@ -17,3 +17,24 @@ path = "src/bin/main.rs"
 [[bin]]
 name = "test1"
 path = "src/bin/test1.rs"
+
+[[bin]]
+name = "test2"
+path = "src/bin/test2.rs"
+
+[[bin]]
+name = "test3"
+path = "src/bin/test3.rs"
+
+
+[[bin]]
+name = "test4"
+path = "src/bin/test4.rs"
+
+[[bin]]
+name = "test5"
+path = "src/bin/test5.rs"
+
+[[bin]]
+name = "test6"
+path = "src/bin/test6.rs"
