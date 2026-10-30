@@ -1,5 +1,4 @@
 use images_editor::canvas::Canvas;
-use images_editor::colors::Colors;
 
 const SIZE: usize = 1200;
 

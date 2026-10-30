@@ -112,5 +112,7 @@ fn main() {
     );
     text(&mut canvas, "VOL. 01  /  2026", 18, 790, 1300, black);
 
+    let start = std::time::Instant::now();
     canvas.export_to_png("editorial_poster.png", false).unwrap();
+    println!("Export took: {:?}", start.elapsed());
 }
