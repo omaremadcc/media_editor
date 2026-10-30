@@ -143,19 +143,19 @@ impl Image {
             file[10 + i] = (file.len() as u32).to_le_bytes()[i];
         }
 
-        let pixels = mirror_pixels_vertically(&self.pixels, width, height);
+        let pixels = &self.pixels;
 
-        for row in pixels.chunks_exact(width as usize) {
-            // 1. Write pixel bytes for this row
-            for pixel in row {
+        for row in (0..height).rev() {
+            let start = row * width;
+            let end = start + width;
+
+            for pixel in pixels[start..end].iter() {
                 if is_alpha {
-                    // file.extend_from_slice(&pixel.to_bgra());
-                    file.extend_from_slice(&pixel.to_bgra())
+                    file.extend_from_slice(&pixel.to_bgra());
                 } else {
                     file.extend_from_slice(&pixel.to_bgr());
                 }
             }
-            // 2. Append padding at the end of the row
             file.extend(std::iter::repeat(0).take(row_padding as usize));
         }
 
