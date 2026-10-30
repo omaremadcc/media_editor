@@ -33,7 +33,7 @@ use crate::canvas::LayerPosition;
 use crate::graphic::PathCommand::MoveTo;
 use crate::image::Image;
 use crate::text::GlyphPath;
-use crate::utils::distance_between_point_and_line;
+use crate::utils::distance_between_point_and_ray;
 use crate::{Pixel, Resolution};
 use ttf_parser::Face;
 
@@ -151,7 +151,7 @@ impl GraphicType {
                                 edges: &mut Vec<((f32, f32), (f32, f32))>,
                             ) {
                                 let distance_between_anchor_and_line =
-                                    distance_between_point_and_line(
+                                    distance_between_point_and_ray(
                                         (anchor_x, anchor_y),
                                         (x0, y0),
                                         (x1, y1),
@@ -220,9 +220,9 @@ impl GraphicType {
                                 edges: &mut Vec<((f32, f32), (f32, f32))>,
                             ) {
                                 let distance_1 =
-                                    distance_between_point_and_line((ax1, ay1), (x0, y0), (x1, y1));
+                                    distance_between_point_and_ray((ax1, ay1), (x0, y0), (x1, y1));
                                 let distance_2 =
-                                    distance_between_point_and_line((ax2, ay2), (x0, y0), (x1, y1));
+                                    distance_between_point_and_ray((ax2, ay2), (x0, y0), (x1, y1));
 
                                 if (distance_1 < 0.01 && distance_2 < 0.01) || depth == 16 {
                                     edges.push(((x0, y0), (x1, y1)));
@@ -459,8 +459,8 @@ fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
                     edges: &mut Vec<((f32, f32), (f32, f32))>,
                 ) {
                     let distance_between_anchor_and_line =
-                        distance_between_point_and_line((anchor_x, anchor_y), (x0, y0), (x1, y1));
-                    if distance_between_anchor_and_line < 0.5 || depth == 16 {
+                        distance_between_point_and_ray((anchor_x, anchor_y), (x0, y0), (x1, y1));
+                    if distance_between_anchor_and_line < 0.1 || depth == 10 {
                         edges.push(((x0, y0), (x1, y1)));
                         return;
                     }
@@ -521,12 +521,13 @@ fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
                     depth: u32,
                     edges: &mut Vec<((f32, f32), (f32, f32))>,
                 ) {
-                    let distance_1 =
-                        distance_between_point_and_line((ax1, ay1), (x0, y0), (x1, y1));
-                    let distance_2 =
-                        distance_between_point_and_line((ax2, ay2), (x0, y0), (x1, y1));
+                    let max_depth = 5;
+                    let tolerance = 0.1;
 
-                    if (distance_1 < 0.01 && distance_2 < 0.01) || depth == 16 {
+                    let distance_1 = distance_between_point_and_ray((ax1, ay1), (x0, y0), (x1, y1));
+                    let distance_2 = distance_between_point_and_ray((ax2, ay2), (x0, y0), (x1, y1));
+
+                    if (distance_1 < tolerance && distance_2 < tolerance) || depth == max_depth {
                         edges.push(((x0, y0), (x1, y1)));
                         return;
                     }
