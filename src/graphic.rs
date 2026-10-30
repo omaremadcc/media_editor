@@ -39,7 +39,6 @@ use ttf_parser::Face;
 
 type StraightLineFromToFn =
     fn((usize, usize), (usize, usize), usize, u32, f32, &mut Image, &Resolution);
-type PlotPixelFn = fn(usize, usize, Pixel, Option<usize>, &mut Image, &Resolution);
 
 impl GraphicType {
     pub(crate) fn render(
@@ -53,7 +52,6 @@ impl GraphicType {
         final_image: &mut Image,
         resolution: &Resolution,
         straight_line_from_to: StraightLineFromToFn,
-        plot_pixel: PlotPixelFn,
     ) {
         match &self {
             // Basic Bresenham Algorithm
@@ -73,7 +71,7 @@ impl GraphicType {
                     final_image,
                     resolution,
                     straight_line_from_to,
-                    plot_pixel,
+                    // plot_pixel,
                 );
             }
             GraphicType::Rectangle {
@@ -118,7 +116,7 @@ impl GraphicType {
                     final_image,
                     resolution,
                     straight_line_from_to,
-                    plot_pixel,
+                    // plot_pixel,
                 );
             }
             GraphicType::Path { commands } => {
@@ -304,7 +302,7 @@ impl GraphicType {
                     final_image,
                     resolution,
                     straight_line_from_to,
-                    plot_pixel,
+                    // plot_pixel,
                 );
             }
             GraphicType::Text { size, text } => {
@@ -371,7 +369,7 @@ impl GraphicType {
                     final_image,
                     resolution,
                     straight_line_from_to,
-                    plot_pixel,
+                    // plot_pixel,
                 );
             }
 
@@ -422,7 +420,7 @@ impl GraphicType {
                     final_image,
                     resolution,
                     straight_line_from_to,
-                    plot_pixel,
+                    // plot_pixel,
                 );
             }
         }
@@ -602,35 +600,23 @@ fn render_edges(
     mut final_image: &mut Image,
     resolution: &Resolution,
     straight_line_from_to: StraightLineFromToFn,
-    plot_pixel: PlotPixelFn,
+    // plot_pixel: PlotPixelFn,
 ) {
-    let min_y = edges
-        .iter()
-        .flat_map(|&(p0, p1)| [p0.1, p1.1])
-        .fold(f32::INFINITY, f32::min)
-        .floor()
-        * scale;
+    let mut min_y = f32::INFINITY;
+    let mut max_y = f32::NEG_INFINITY;
+    let mut min_x = f32::INFINITY;
+    let mut max_x = f32::NEG_INFINITY;
+    for &(p0, p1) in edges.iter() {
+        min_y = min_y.min(p0.1).min(p1.1);
+        max_y = max_y.max(p0.1).max(p1.1);
+        min_x = min_x.min(p0.0).min(p1.0);
+        max_x = max_x.max(p0.0).max(p1.0);
+    }
 
-    let max_y = edges
-        .iter()
-        .flat_map(|&(p0, p1)| [p0.1, p1.1])
-        .fold(f32::NEG_INFINITY, f32::max)
-        .ceil()
-        * scale;
-
-    let max_x = edges
-        .iter()
-        .flat_map(|&(p0, p1)| [p0.0, p1.0])
-        .fold(f32::NEG_INFINITY, f32::max)
-        .ceil()
-        * scale;
-
-    let min_x = edges
-        .iter()
-        .flat_map(|&(p0, p1)| [p0.0, p1.0])
-        .fold(f32::INFINITY, f32::min)
-        .floor()
-        * scale;
+    min_y = min_y.floor() * scale;
+    max_y = max_y.ceil() * scale;
+    max_x = max_x.ceil() * scale;
+    min_x = min_x.floor() * scale;
 
     let width = max_x - min_x;
     let height = max_y - min_y;
@@ -659,7 +645,9 @@ fn render_edges(
 
     // Filling the thing
     if let Some(fill_color) = fill_color {
-        for y in (min_y as i32 + translate_y as i32)..(max_y as i32 + translate_y as i32) {
+        for y in (min_y as i32 + translate_y as i32)
+            ..(max_y.min(resolution.height as f32) as i32 + translate_y as i32)
+        {
             let scan_y = y as f32 + 0.5;
 
             intersections.clear();
@@ -688,15 +676,13 @@ fn render_edges(
 
                 let mut pixel = Pixel::from_hex(fill_color);
                 pixel.a = (255f32 * opacity) as u8;
-                for x in start_x..end_x {
-                    plot_pixel(
-                        x as usize,
-                        y as usize,
-                        pixel,
-                        None,
-                        &mut final_image,
-                        resolution,
-                    );
+                for x in start_x..end_x.min(resolution.width as i32) {
+                    let index = y as usize * resolution.width as usize + x as usize;
+                    if pixel.a == 255 {
+                        final_image.pixels[index] = pixel;
+                    } else if pixel.a > 0 && !final_image.pixels[index].is_empty() {
+                        final_image.pixels[index] = final_image.pixels[index].merge_with(&pixel);
+                    }
                 }
             }
         }

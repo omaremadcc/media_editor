@@ -10,27 +10,25 @@ impl Canvas {
         let empty_pixels = vec![Pixel::empty(); num_pixels];
         let mut final_image = Image::new(empty_pixels, self.resolution.clone());
 
+        #[inline(always)]
         fn plot_pixel(
             x: usize,
             y: usize,
             pixel: Pixel,
-            base_index: Option<usize>,
+            base_index: usize,
             final_image: &mut Image,
             canvas_resolution: &Resolution,
         ) {
+            // Make sure the pixel is not out of bounds
             if y >= canvas_resolution.height as usize || x >= canvas_resolution.width as usize {
                 return;
             }
-            let index = base_index.unwrap_or(0) + y * canvas_resolution.width as usize + x;
-            // Make sure the pixel is not out of bounds
-            if index < final_image.pixels.len()
-                && x <= canvas_resolution.width
-                && y <= canvas_resolution.height
-            {
-                if pixel.a != 255 && !final_image.pixels[index].is_empty() {
-                    final_image.pixels[index] = final_image.pixels[index].merge_with(&pixel);
-                } else {
+            let index = base_index + y * canvas_resolution.width as usize + x;
+            if index < final_image.pixels.len() {
+                if pixel.a == 255 {
                     final_image.pixels[index] = pixel;
+                } else if pixel.a > 0 && !final_image.pixels[index].is_empty() {
+                    final_image.pixels[index] = final_image.pixels[index].merge_with(&pixel);
                 }
             }
         }
@@ -70,22 +68,22 @@ impl Canvas {
                 let max_x = x0 + radius.ceil() as isize;
                 let max_y = y0 + radius.ceil() as isize;
 
-                for py in min_y..=max_y {
-                    for px in min_x..=max_x {
+                for py in min_y..=max_y.min(canvas_resolution.height as isize) {
+                    for px in min_x..=max_x.min(canvas_resolution.width as isize) {
                         let ddx = px as f64 - x0 as f64;
                         let ddy = py as f64 - y0 as f64;
 
                         let mut pixel = Pixel::from_hex(stroke_color);
                         pixel.a = (255f32 * opacity) as u8;
                         if ddx * ddx + ddy * ddy <= radius_squared {
-                            plot_pixel(
-                                px as usize,
-                                py as usize,
-                                pixel,
-                                None,
-                                final_image,
-                                canvas_resolution,
-                            );
+                            let index =
+                                py as usize * canvas_resolution.width as usize + px as usize;
+                            if pixel.a == 255 {
+                                final_image.pixels[index] = pixel;
+                            } else if pixel.a > 0 && !final_image.pixels[index].is_empty() {
+                                final_image.pixels[index] =
+                                    final_image.pixels[index].merge_with(&pixel);
+                            }
                         }
                     }
                 }
@@ -151,7 +149,7 @@ impl Canvas {
                                 col,
                                 row,
                                 pixel,
-                                Some(base_index as usize),
+                                base_index as usize,
                                 &mut final_image,
                                 &self.resolution,
                             );
@@ -168,7 +166,6 @@ impl Canvas {
                     &mut final_image,
                     &self.resolution,
                     straight_line_from_to,
-                    plot_pixel,
                 ),
                 Element::SVG(SVGData { elements, .. }) => {
                     for graphic in elements {
@@ -182,7 +179,6 @@ impl Canvas {
                             &mut final_image,
                             &self.resolution,
                             straight_line_from_to,
-                            plot_pixel,
                         );
                     }
                 }
