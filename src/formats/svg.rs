@@ -64,11 +64,11 @@ pub(crate) fn read_svg_from_path(path: &str) -> Result<SVGData, Error> {
                 let width = node.attribute("width").unwrap().parse::<f32>().unwrap();
                 let height = node.attribute("height").unwrap().parse::<f32>().unwrap();
                 let mut fill_color = None;
-                if let Some(c) = node.attribute("fill-color") {
+                if let Some(c) = node.attribute("fill") {
                     fill_color = Some(string_hex_to_u32(c));
                 }
                 let mut stroke_color = None;
-                if let Some(c) = node.attribute("stroke-color") {
+                if let Some(c) = node.attribute("stroke") {
                     stroke_color = Some(string_hex_to_u32(c));
                 }
                 let mut stroke_width = 1;
@@ -99,15 +99,15 @@ pub(crate) fn read_svg_from_path(path: &str) -> Result<SVGData, Error> {
                 let cy = node.attribute("cy").unwrap_or("0").parse::<f32>().unwrap();
                 let r = node.attribute("r").unwrap().parse::<f32>().unwrap();
                 let mut fill_color = None;
-                if let Some(c) = node.attribute("fill-color") {
+                if let Some(c) = node.attribute("fill") {
                     fill_color = Some(string_hex_to_u32(c));
                 }
                 let mut stroke_color = None;
-                if let Some(c) = node.attribute("stroke-color") {
+                if let Some(c) = node.attribute("stroke") {
                     stroke_color = Some(string_hex_to_u32(c));
                 }
                 let mut stroke_width = 1;
-                if let Some(w) = node.attribute("stroke-width") {
+                if let Some(w) = node.attribute("stroke") {
                     stroke_width = w.parse::<f32>().unwrap() as usize;
                 }
 
@@ -133,11 +133,11 @@ pub(crate) fn read_svg_from_path(path: &str) -> Result<SVGData, Error> {
                 let rx = node.attribute("rx").unwrap().parse::<f32>().unwrap();
                 let ry = node.attribute("ry").unwrap().parse::<f32>().unwrap();
                 let mut fill_color = None;
-                if let Some(c) = node.attribute("fill-color") {
+                if let Some(c) = node.attribute("fill") {
                     fill_color = Some(string_hex_to_u32(c));
                 }
                 let mut stroke_color = None;
-                if let Some(c) = node.attribute("stroke-color") {
+                if let Some(c) = node.attribute("stroke") {
                     stroke_color = Some(string_hex_to_u32(c));
                 }
                 let mut stroke_width = 1;
@@ -182,7 +182,7 @@ pub(crate) fn read_svg_from_path(path: &str) -> Result<SVGData, Error> {
                 let x2 = node.attribute("x2").unwrap().parse::<f32>().unwrap();
                 let y2 = node.attribute("y2").unwrap().parse::<f32>().unwrap();
                 let mut stroke_color = None;
-                if let Some(c) = node.attribute("stroke-color") {
+                if let Some(c) = node.attribute("stroke") {
                     stroke_color = Some(string_hex_to_u32(c));
                 }
                 let mut stroke_width = 1;
