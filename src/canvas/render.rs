@@ -58,32 +58,51 @@ impl Canvas {
 
             let mut error = dx - dy;
 
-            // Use a disk of radius width / 2 to create a continuous stroke.
+            // Each point along the Bresenham line stamps a circular brush.
             let radius = width as f64 / 2.0;
-            let radius_squared = radius * radius;
 
             loop {
-                let min_x = (x0 - radius.ceil() as isize).max(0);
-                let min_y = (y0 - radius.ceil() as isize).max(0);
-                let max_x = x0 + radius.ceil() as isize;
-                let max_y = y0 + radius.ceil() as isize;
+                // Add one extra pixel around the radius for the anti-aliased edge.
+                let bounds_radius = radius.ceil() as isize + 1;
 
-                for py in min_y..=max_y.min(canvas_resolution.height as isize) {
-                    for px in min_x..=max_x.min(canvas_resolution.width as isize) {
+                let min_x = (x0 - bounds_radius).max(0);
+                let min_y = (y0 - bounds_radius).max(0);
+
+                let max_x = (x0 + bounds_radius).min(canvas_resolution.width as isize - 1);
+
+                let max_y = (y0 + bounds_radius).min(canvas_resolution.height as isize - 1);
+
+                for py in min_y..=max_y {
+                    for px in min_x..=max_x {
                         let ddx = px as f64 - x0 as f64;
                         let ddy = py as f64 - y0 as f64;
 
+                        let distance = (ddx * ddx + ddy * ddy).sqrt();
+
+                        // Pixels inside the radius are fully covered.
+                        // The half-pixel transition creates partial coverage at the edge.
+                        let coverage = (radius + 0.5 - distance).clamp(0.0, 1.0) as f32;
+
+                        if coverage <= 0.0 {
+                            continue;
+                        }
+
                         let mut pixel = Pixel::from_hex(stroke_color);
-                        pixel.a = (255f32 * opacity) as u8;
-                        if ddx * ddx + ddy * ddy <= radius_squared {
-                            let index =
-                                py as usize * canvas_resolution.width as usize + px as usize;
-                            if pixel.a == 255 {
-                                final_image.pixels[index] = pixel;
-                            } else if pixel.a > 0 && !final_image.pixels[index].is_empty() {
-                                final_image.pixels[index] =
-                                    final_image.pixels[index].merge_with(&pixel);
-                            }
+                        pixel.a = (255.0 * opacity * coverage) as u8;
+
+                        if pixel.a == 0 {
+                            continue;
+                        }
+
+                        let index = py as usize * canvas_resolution.width as usize + px as usize;
+
+                        if pixel.a == 255 {
+                            final_image.pixels[index] = pixel;
+                        } else if final_image.pixels[index].is_empty() {
+                            final_image.pixels[index] = pixel;
+                        } else {
+                            final_image.pixels[index] =
+                                final_image.pixels[index].merge_with(&pixel);
                         }
                     }
                 }
@@ -105,7 +124,6 @@ impl Canvas {
                 }
             }
         }
-
         for layer in &self.layers {
             match &layer.element {
                 Element::Image(image) => {
