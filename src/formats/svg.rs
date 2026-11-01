@@ -36,11 +36,11 @@ pub(crate) fn read_svg_from_path(path: &str) -> Result<SVGData, Error> {
         match tag {
             "path" => {
                 let mut fill_color = None;
-                if let Some(c) = node.attribute("fill-color") {
+                if let Some(c) = node.attribute("fill") {
                     fill_color = Some(string_hex_to_u32(c));
                 }
                 let mut stroke_color = None;
-                if let Some(c) = node.attribute("stroke-color") {
+                if let Some(c) = node.attribute("stroke") {
                     stroke_color = Some(string_hex_to_u32(c));
                 }
                 let mut stroke_width = 1;
