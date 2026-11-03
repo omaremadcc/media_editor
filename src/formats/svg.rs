@@ -273,7 +273,7 @@ pub(crate) fn read_svg_from_path(path: &str) -> Result<SVGData, Error> {
 use std::io::Error;
 
 use crate::{
-    graphic::{Graphic, GraphicType, PathCommand},
+    graphic::{Graphic, GraphicType, PathCommand, path_to_edges, render_edges},
     utils::string_hex_to_u32,
 };
 #[derive(Debug)]
@@ -871,12 +871,8 @@ fn svg_to_path(data: &str) -> Result<Vec<PathCommand>, String> {
         }
     }
     let mut path_commands_transformed = vec![];
-    let scale = 1.0;
-    let translate_x = -min_x;
-    let translate_y = -min_y;
 
-    let transform =
-        |x: f32, y: f32| -> (f32, f32) { ((x + translate_x) * scale, (y + translate_y) * scale) };
+    let transform = |x: f32, y: f32| -> (f32, f32) { ((x), (y)) };
 
     for command in path_commands {
         match command {
@@ -1062,5 +1058,70 @@ fn append_svg_arc(
         path_commands.push(PathCommand::CubicTo(p3, control1, control2));
 
         theta = next_theta;
+    }
+}
+
+use crate::Resolution;
+use crate::canvas::LayerPosition;
+use crate::graphic::StraightLineFromToFn;
+use crate::image::Image;
+
+impl SVGData {
+    pub(crate) fn render(
+        &self,
+        position: &LayerPosition,
+        scale: f32,
+        opacity: f32,
+        final_image: &mut Image,
+        resolution: &Resolution,
+        straight_line_from_to: StraightLineFromToFn,
+    ) {
+        let (mut min_x, mut min_y, mut max_x, mut max_y) = (f32::MAX, f32::MAX, f32::MIN, f32::MIN);
+
+        let mut edges = Vec::new();
+
+        for element in &self.elements {
+            match &element.graphic_type {
+                GraphicType::Path { commands } => {
+                    let edges_inner = path_to_edges(commands);
+                    for &(p0, p1) in edges_inner.iter() {
+                        min_y = min_y.min(p0.1).min(p1.1);
+                        max_y = max_y.max(p0.1).max(p1.1);
+                        min_x = min_x.min(p0.0).min(p1.0);
+                        max_x = max_x.max(p0.0).max(p1.0);
+                    }
+                    edges.extend_from_slice(&vec![edges_inner]);
+                }
+                _ => (),
+            }
+        }
+
+        let element_width = (max_x - min_x) * scale;
+        let element_height = (max_y - min_y) * scale;
+
+        let (target_x, target_y) =
+            position.to_translation(element_width, element_height, resolution);
+
+        let translation_x = target_x - min_x * scale;
+        let translation_y = target_y - min_y * scale;
+
+        for (i, element) in self.elements.iter().enumerate() {
+            let edges = &edges[i];
+            render_edges(
+                edges,
+                element.stroke_width,
+                element.stroke_color,
+                element.fill_color,
+                position,
+                scale,
+                opacity,
+                final_image,
+                resolution,
+                straight_line_from_to,
+                Some((translation_x, translation_y)),
+                // None,
+            );
+        }
+        dbg!(translation_x, translation_y);
     }
 }

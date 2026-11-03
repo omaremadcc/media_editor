@@ -37,7 +37,7 @@ use crate::utils::distance_between_point_and_ray;
 use crate::{Pixel, Resolution};
 use ttf_parser::Face;
 
-type StraightLineFromToFn =
+pub(crate) type StraightLineFromToFn =
     fn((usize, usize), (usize, usize), usize, u32, f32, &mut Image, &Resolution);
 
 impl GraphicType {
@@ -61,7 +61,7 @@ impl GraphicType {
                     (end.0 as f32, end.1 as f32),
                 )];
                 render_edges(
-                    edges,
+                    &edges,
                     stroke_width,
                     stroke_color,
                     fill_color,
@@ -71,6 +71,7 @@ impl GraphicType {
                     final_image,
                     resolution,
                     straight_line_from_to,
+                    None,
                     // plot_pixel,
                 );
             }
@@ -103,10 +104,10 @@ impl GraphicType {
                     PathCommand::QuadraticTo((r, 0.), (0., 0.)),
                     PathCommand::Close,
                 ];
-                edges = path_to_edges(commands);
+                edges = path_to_edges(&commands);
 
                 render_edges(
-                    edges,
+                    &edges,
                     stroke_width,
                     stroke_color,
                     fill_color,
@@ -116,7 +117,7 @@ impl GraphicType {
                     final_image,
                     resolution,
                     straight_line_from_to,
-                    // plot_pixel,
+                    None, // plot_pixel,
                 );
             }
             GraphicType::Path { commands } => {
@@ -292,7 +293,7 @@ impl GraphicType {
                     }
                 }
                 render_edges(
-                    edges,
+                    &edges,
                     stroke_width,
                     stroke_color,
                     fill_color,
@@ -302,7 +303,7 @@ impl GraphicType {
                     final_image,
                     resolution,
                     straight_line_from_to,
-                    // plot_pixel,
+                    None, // plot_pixel,
                 );
             }
             GraphicType::Text { size, text } => {
@@ -323,7 +324,7 @@ impl GraphicType {
                     let text_scale = (*size as f32 / units_per_em) as f32;
                     line_height = *size as f32 * 0.75;
 
-                    let edges_inner = path_to_edges(path.commands);
+                    let edges_inner = path_to_edges(&path.commands);
 
                     let edges_inner: Vec<((f32, f32), (f32, f32))> = edges_inner
                         .iter()
@@ -359,7 +360,7 @@ impl GraphicType {
                     .collect::<Vec<_>>();
 
                 render_edges(
-                    edges_flipped,
+                    &edges_flipped,
                     stroke_width,
                     stroke_color,
                     fill_color,
@@ -369,7 +370,7 @@ impl GraphicType {
                     final_image,
                     resolution,
                     straight_line_from_to,
-                    // plot_pixel,
+                    None, // plot_pixel,
                 );
             }
 
@@ -408,9 +409,9 @@ impl GraphicType {
                     (cx - k, cy - r),
                 ));
 
-                let edges = path_to_edges(commands);
+                let edges = path_to_edges(&commands);
                 render_edges(
-                    edges,
+                    &edges,
                     stroke_width,
                     stroke_color,
                     fill_color,
@@ -420,26 +421,26 @@ impl GraphicType {
                     final_image,
                     resolution,
                     straight_line_from_to,
-                    // plot_pixel,
+                    None, // plot_pixel,
                 );
             }
         }
     }
 }
 
-fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
+pub(crate) fn path_to_edges(commands: &Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
     let mut edges: Vec<((f32, f32), (f32, f32))> = vec![];
     let mut current_point = (0f32, 0f32);
     let mut most_recent_move = (0f32, 0f32);
     for command in commands {
         match command {
             PathCommand::MoveTo(point) => {
-                most_recent_move = point;
-                current_point = point;
+                most_recent_move = *point;
+                current_point = *point;
             }
             PathCommand::LineTo(point) => {
-                edges.push((current_point, point));
-                current_point = point;
+                edges.push((current_point, *point));
+                current_point = *point;
             }
             // De Casteljau's algorithm
             PathCommand::QuadraticTo((x1, y1), (anchor_x, anchor_y)) => {
@@ -494,14 +495,14 @@ fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
                 recure(
                     x0 as f32,
                     y0 as f32,
-                    anchor_x as f32,
-                    anchor_y as f32,
-                    x1 as f32,
-                    y1 as f32,
+                    *anchor_x as f32,
+                    *anchor_y as f32,
+                    *x1 as f32,
+                    *y1 as f32,
                     0,
                     &mut edges,
                 );
-                current_point = (x1, y1);
+                current_point = (*x1, *y1);
             }
             PathCommand::CubicTo((x1, y1), (ax1, ay1), (ax2, ay2)) => {
                 let x0 = current_point.0;
@@ -574,11 +575,19 @@ fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
                 }
 
                 recure(
-                    x0 as f32, y0 as f32, ax1 as f32, ay1 as f32, ax2 as f32, ay2 as f32,
-                    x1 as f32, y1 as f32, 0, &mut edges,
+                    x0 as f32,
+                    y0 as f32,
+                    *ax1 as f32,
+                    *ay1 as f32,
+                    *ax2 as f32,
+                    *ay2 as f32,
+                    *x1 as f32,
+                    *y1 as f32,
+                    0,
+                    &mut edges,
                 );
 
-                current_point = (x1, y1);
+                current_point = (*x1, *y1);
             }
             PathCommand::Close => {
                 edges.push((current_point, most_recent_move));
@@ -589,8 +598,8 @@ fn path_to_edges(commands: Vec<PathCommand>) -> Vec<((f32, f32), (f32, f32))> {
     return edges;
 }
 
-fn render_edges(
-    edges: Vec<((f32, f32), (f32, f32))>,
+pub(crate) fn render_edges(
+    edges: &Vec<((f32, f32), (f32, f32))>,
     stroke_width: usize,
     stroke_color: Option<u32>,
     fill_color: Option<u32>,
@@ -600,7 +609,7 @@ fn render_edges(
     mut final_image: &mut Image,
     resolution: &Resolution,
     straight_line_from_to: StraightLineFromToFn,
-    // plot_pixel: PlotPixelFn,
+    transform: Option<(f32, f32)>, // plot_pixel: PlotPixelFn,
 ) {
     let mut min_y = f32::INFINITY;
     let mut max_y = f32::NEG_INFINITY;
@@ -618,13 +627,18 @@ fn render_edges(
     max_x = max_x.ceil() * scale;
     min_x = min_x.floor() * scale;
 
-    let width = max_x - min_x;
-    let height = max_y - min_y;
+    let (translate_x, translate_y) = if transform.is_some() {
+        transform.unwrap()
+    } else {
+        let width = max_x - min_x;
+        let height = max_y - min_y;
 
-    let (pixel_x, pixel_y) = position.to_translation(width, height, resolution);
+        let (pixel_x, pixel_y) = position.to_translation(width, height, resolution);
 
-    let translate_x = pixel_x - (min_x);
-    let translate_y = pixel_y - (min_y);
+        let translate_x = pixel_x - (min_x);
+        let translate_y = pixel_y - (min_y);
+        (translate_x, translate_y)
+    };
 
     let mut intersections = vec![];
 
@@ -645,8 +659,8 @@ fn render_edges(
 
     // Filling the thing
     if let Some(fill_color) = fill_color {
-        for y in (min_y as i32 + translate_y as i32)
-            ..(max_y.min(resolution.height as f32) as i32 + translate_y as i32)
+        for y in ((min_y + translate_y) as i32)
+            ..(((max_y + translate_y).min(resolution.height as f32)) as i32)
         {
             let scan_y = y as f32 + 0.5;
 
