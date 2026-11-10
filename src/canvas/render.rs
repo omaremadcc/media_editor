@@ -185,30 +185,14 @@ impl Canvas {
                     &self.resolution,
                     straight_line_from_to,
                 ),
-                Element::SVG(data) => {
-                    data.render(
-                        &layer.position,
-                        layer.scale,
-                        layer.opacity,
-                        &mut final_image,
-                        &self.resolution,
-                        straight_line_from_to,
-                    )
-                    // for graphic in elements {
-                    //     dbg!(graphic);
-                    //     graphic.graphic_type.render(
-                    //         graphic.stroke_width,
-                    //         graphic.stroke_color,
-                    //         graphic.fill_color,
-                    //         &layer.position,
-                    //         layer.scale,
-                    //         layer.opacity,
-                    //         &mut final_image,
-                    //         &self.resolution,
-                    //         straight_line_from_to,
-                    //     );
-                    // }
-                }
+                Element::SVG(data) => data.render(
+                    &layer.position,
+                    layer.scale,
+                    layer.opacity,
+                    &mut final_image,
+                    &self.resolution,
+                    straight_line_from_to,
+                ),
             }
         }
 

@@ -34,3 +34,10 @@ Pixel is a struct that contain red, green, blue and alpha fields, alpha is 255 w
 
 ## Exporting
 The only exporting option for now is transparent which is a bool for having alpha channel
+
+## Rendering SVGs from file
+We first parse the svg and turn every tag into an path element without changing anything in the actual values
+Then on rendering SVG element, we first calculate the minimum point in the entire svg (with all its paths), we then calculate svg real dimiensions and scale them based on the layer scale
+we then calculate the translation based on the target x and y start points
+then we calculate translation x and y based on target x and y and scaled min x and min y
+We then calculate edges then call render paths (which originally calculate translation to calc position internally) but we pass the translations we calculated so the svg elements are proportioned

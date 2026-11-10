@@ -502,6 +502,7 @@ pub(crate) fn path_to_edges(commands: &Vec<PathCommand>) -> Vec<((f32, f32), (f3
                     0,
                     &mut edges,
                 );
+
                 current_point = (*x1, *y1);
             }
             PathCommand::CubicTo((x1, y1), (ax1, ay1), (ax2, ay2)) => {
