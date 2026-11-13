@@ -977,7 +977,7 @@ impl SVGData {
     pub(crate) fn render(
         &self,
         position: &LayerPosition,
-        scale: f32,
+        scale: (f32, f32),
         opacity: f32,
         final_image: &mut Image,
         resolution: &Resolution,
@@ -1003,14 +1003,14 @@ impl SVGData {
             }
         }
 
-        let element_width = (max_x - min_x) * scale;
-        let element_height = (max_y - min_y) * scale;
+        let element_width = (max_x - min_x) * scale.0;
+        let element_height = (max_y - min_y) * scale.1;
 
         let (target_x, target_y) =
             position.to_translation(element_width, element_height, resolution);
 
-        let translation_x = target_x - min_x * scale;
-        let translation_y = target_y - min_y * scale;
+        let translation_x = target_x - min_x * scale.0;
+        let translation_y = target_y - min_y * scale.1;
 
         for (i, element) in self.elements.iter().enumerate() {
             let edges = &edges[i];

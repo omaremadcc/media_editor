@@ -47,7 +47,7 @@ impl GraphicType {
         stroke_color: Option<u32>,
         fill_color: Option<u32>,
         position: &LayerPosition,
-        scale: f32,
+        scale: (f32, f32),
         opacity: f32,
         final_image: &mut Image,
         resolution: &Resolution,
@@ -352,7 +352,7 @@ impl GraphicType {
                     .fold(f32::NEG_INFINITY, f32::max)
                     .ceil();
 
-                let height = (max_y - min_y) * scale;
+                let height = (max_y - min_y) * scale.1;
 
                 let edges_flipped = edges
                     .into_iter()
@@ -605,7 +605,7 @@ pub(crate) fn render_edges(
     stroke_color: Option<u32>,
     fill_color: Option<u32>,
     position: &LayerPosition,
-    scale: f32,
+    scale: (f32, f32),
     opacity: f32,
     mut final_image: &mut Image,
     resolution: &Resolution,
@@ -623,10 +623,10 @@ pub(crate) fn render_edges(
         max_x = max_x.max(p0.0).max(p1.0);
     }
 
-    min_y = min_y.floor() * scale;
-    max_y = max_y.ceil() * scale;
-    max_x = max_x.ceil() * scale;
-    min_x = min_x.floor() * scale;
+    min_y = min_y.floor() * scale.1;
+    max_y = max_y.ceil() * scale.1;
+    max_x = max_x.ceil() * scale.0;
+    min_x = min_x.floor() * scale.0;
 
     let (translate_x, translate_y) = if transform.is_some() {
         transform.unwrap()
@@ -644,8 +644,8 @@ pub(crate) fn render_edges(
     let mut intersections = vec![];
 
     let transform_point = |(x, y): (f32, f32)| {
-        let x = x as f32 * scale + translate_x;
-        let y = y as f32 * scale + translate_y;
+        let x = x as f32 * scale.0 + translate_x;
+        let y = y as f32 * scale.1 + translate_y;
         (x, y)
     };
 

@@ -133,15 +133,19 @@ impl Canvas {
 
                     let image = &image;
                     let mut pixels = &image.pixels;
-                    let target_width = (image.resolution.width as f32 * layer.scale) as usize;
-                    let target_height = (image.resolution.height as f32 * layer.scale) as usize;
+                    let target_width = (image.resolution.width as f32 * layer.scale.0) as usize;
+                    let target_height = (image.resolution.height as f32 * layer.scale.1) as usize;
                     let mut scaled_pixels = vec![Pixel::empty(); target_width * target_height];
 
-                    if layer.scale != 1.0 {
+                    if layer.scale.0 != 1.0 || layer.scale.1 != 1.0 {
                         for row in 0..target_height {
                             for col in 0..target_width {
-                                let (src_x, src_y) =
-                                    scaled_pixel_color(col as u32, row as u32, 1.0 / layer.scale);
+                                let (src_x, src_y) = scaled_pixel_color(
+                                    col as u32,
+                                    row as u32,
+                                    1.0 / layer.scale.0,
+                                    1.0 / layer.scale.1,
+                                );
                                 scaled_pixels[row * target_width + col] = image.pixels
                                     [src_y as usize * image.resolution.width + src_x as usize];
                             }

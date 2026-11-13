@@ -51,7 +51,7 @@ pub struct Layer {
     pub(crate) id: usize,
     pub(crate) element: Element,
     pub(crate) position: LayerPosition,
-    pub(crate) scale: f32,
+    pub(crate) scale: (f32, f32),
     pub(crate) opacity: f32,
     pub(crate) adjustments_stack: Vec<Adjustment>,
 }
@@ -61,7 +61,13 @@ impl Layer {
         self.opacity = opacity;
     }
     pub fn set_scale(&mut self, scale: f32) {
-        self.scale = scale;
+        self.scale = (scale, scale);
+    }
+    pub fn set_scale_x(&mut self, scale: f32) {
+        self.scale.0 = scale;
+    }
+    pub fn set_scale_y(&mut self, scale: f32) {
+        self.scale.1 = scale;
     }
     pub fn set_x_position_end(&mut self) {
         self.position.x = vec![Position::End]
@@ -101,9 +107,6 @@ impl Layer {
     }
     pub fn move_to_point_y(&mut self, y: i32) {
         self.position.y = vec![Position::Point(y)];
-    }
-    pub fn scale_layer(&mut self, scale: f32) {
-        self.scale = scale;
     }
 
     pub fn move_layer_x_pixels(&mut self, pixels: i32) {
@@ -157,7 +160,7 @@ impl Layer {
         Self {
             element,
             position: LayerPosition::start(),
-            scale: 1.0,
+            scale: (1.0, 1.0),
             opacity: 1f32,
             id,
             adjustments_stack: Vec::new(),
